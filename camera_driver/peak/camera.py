@@ -40,6 +40,13 @@ class Camera(Dispatcher):
             # Put the buffer in the pool
         self.data_stream.QueueBuffer(buffer)
 
+  def _flush_buffers(self):
+    self.log(logging.DEBUG, "Flushing buffers...")
+
+    self.data_stream.Flush(ids_peak.DataStreamFlushMode_DiscardAll)
+    for buffer in self.data_stream.AnnouncedBuffers():
+        self.data_stream.RevokeBuffer(buffer)
+
   def execute_wait(self, node_name:str):
      node = self.nodemap.FindNode(node_name)
      node.Execute()
@@ -48,7 +55,6 @@ class Camera(Dispatcher):
   def node_value(self, node_name:str):
     return self.nodemap.FindNode(node_name).Value()
     
-
 
   def _capture_thread(self):
     while self.started:
@@ -88,21 +94,20 @@ class Camera(Dispatcher):
     self.execute_wait("AcquisitionStop")
     self.nodemap.FindNode("TLParamsLocked").SetValue(0)
 
-    self.emit("on_started", False)
     self.started = False
 
-
     self.log(logging.DEBUG, f"Waiting for capture thread {self.capture_thread}...")
+    self.data_stream.KillWait()
+
     self.capture_thread.join()
     self.capture_thread = None
 
-
-    self.log(logging.DEBUG, "Flushing buffers...")
-
-
-    self.data_stream.Flush(ids_peak.DataStreamFlushMode_DiscardAll)
-    for buffer in self.data_stream.AnnouncedBuffers():
-        self.data_stream.RevokeBuffer(buffer)
+    self._flush_buffers()
 
     self.log(logging.INFO, "stopped.")
+    self.emit("on_started", False)
 
+
+  def release(self):
+    if self.started:
+      self.stop()

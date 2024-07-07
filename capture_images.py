@@ -1,29 +1,33 @@
-# from camera_driver.harvester import HarvesterManager
-
-# def main():
-
-#   manager = HarvesterManager('/usr/lib/ids/cti/ids_u3vgentl.cti')
-#   print(manager.camera_serials())
-
 
 import logging
 from time import sleep
 
 import torch
-from camera_driver.peak import Manager
-from camera_driver.peak.buffer import Buffer
+import yaml
+from camera_driver.spinnaker import Manager
+from camera_driver.spinnaker.buffer import Buffer
+import logging
 
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
 def main():
 
   manager = Manager(logger)
   print(manager.camera_serials())
+  # manager.reset_cameras()
+
+
+  config_file = "camera_12p.yaml"
+  with open(config_file) as config_file:
+     config = yaml.load(config_file, Loader=yaml.Loader)
 
   serial = manager.camera_serials()[0]
   camera = manager.init_camera("camera", serial)
+
+  camera.load_config(config["camera_settings"])
 
   def on_image(buffer:Buffer):
 
@@ -39,6 +43,9 @@ def main():
 
   sleep(5)
   camera.stop()
+
+  del camera
+  manager.release()
 
 
 

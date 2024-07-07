@@ -1,3 +1,3 @@
-from .manager import Manager, Camera
+from .manager import Manager, Camera, Buffer
 
 __all__ = ['Manager', 'Camera']

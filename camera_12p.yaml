@@ -1,0 +1,38 @@
+camera_settings:
+  device:
+    - UserSetSelector: Default
+    - PixelFormat: BayerRG12p
+
+    # Turn all the auto off
+    - ExposureAuto: "Off"
+    - GainAuto: "Off"
+    - BalanceWhiteAuto: "Off"
+    - BlackLevel: 0
+    - BlackLevelClampingEnable: False
+    - GammaEnable: False
+
+    - ChunkModeActive: True
+    - ChunkSelector: "Timestamp"
+    - ChunkEnable: True
+
+  transport_layer:
+    - StreamBufferCountMode: Manual
+    - StreamBufferCountManual: 2
+    - StreamBufferHandlingMode: OldestFirst
+
+
+  slave:
+    - LineSelector: Line3
+    - TriggerSource: Line3
+    - TriggerSelector: FrameStart
+    - LineMode: Input
+    - TriggerOverlap: ReadOut
+    - TriggerActivation: RisingEdge
+    - TriggerMode: "On"
+
+  
+  master:
+    - LineSelector: Line2
+    - LineMode: Output
+    - TriggerSource: Software
+    
