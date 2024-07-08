@@ -4,48 +4,71 @@ from time import sleep
 
 import torch
 import yaml
-from camera_driver.spinnaker import Manager
-from camera_driver.spinnaker.buffer import Buffer
-import logging
+
+from camera_driver.interface import Buffer, create_manager
+from argparse import ArgumentParser
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+
+
+def load_yaml(file):
+  with open(file) as f:
+    return yaml.load(f, Loader=yaml.Loader)
+  
+
+
+
 
 
 def main():
 
-  manager = Manager(logger)
-  print(manager.camera_serials())
-  # manager.reset_cameras()
+  parser = ArgumentParser()
+  parser.add_argument("--config", type=str, required=True)
+  parser.add_argument("--settings", type=str, required=True)
+  args = parser.parse_args()
 
 
-  config_file = "camera_12p.yaml"
-  with open(config_file) as config_file:
-     config = yaml.load(config_file, Loader=yaml.Loader)
 
-  serial = manager.camera_serials()[0]
+  camera_settings = load_yaml(args.settings)
+  config = load_yaml(args.config)
+
+
+  # serials:Dict[str, str] = config_file["cameras"]
+
+  manager = create_manager(camera_settings["backend"], logger)
+
+  logging.info(f"Found cameras {manager.camera_serials()}")
+  
+  if config["reset_cycle"] is True:
+    manager.reset_cameras(manager.camera_serials())
+
+  serial = manager.camera_serials().pop()
   camera = manager.init_camera("camera", serial)
 
-  camera.load_config(config["camera_settings"])
 
-  def on_image(buffer:Buffer):
+  try:
+    camera.load_config(camera_settings["camera_settings"], "master")
 
-    image = buffer.image(device=torch.device("cuda", 0))
-    print(image)
+    def on_image(buffer:Buffer):
+      image = buffer.image(device=torch.device("cuda", 0))
+      print(image)
 
-    buffer.release()
+      buffer.release()
 
 
-  camera.bind(on_image=on_image)
+    camera.bind(on_image=on_image)
+    camera.start()
 
-  camera.start()
+    sleep(5)
 
-  sleep(5)
-  camera.stop()
+  finally:
+    camera.release()
 
-  del camera
-  manager.release()
+
+    del camera
+    manager.release()
 
 
 

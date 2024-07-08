@@ -5,8 +5,9 @@ from typing import  Dict, List
 import PySpin
 
 from beartype import beartype
-from pydispatch import Dispatcher
 from .buffer import Buffer
+
+from camera_driver import interface
 
 from . import helpers
 
@@ -23,32 +24,36 @@ class ImageEventHandler(PySpin.ImageEventHandler):
     self.on_image(image)
 
 
-class Camera(Dispatcher):
-  _events_ = ["on_started", "on_image"]
+class Camera(interface.Camera):
 
   @beartype
   def __init__(self, name:str, camera:PySpin.CameraPtr, logger:Logger):
     self.camera = camera
 
     camera.Init()
-    self.nodemap = camera.GetNodeMap()
-    self.transport = camera.GetTLDeviceNodeMap()
+    if not helpers.validate_init(camera):
+      raise RuntimeError(f"Failed to initialize camera {name}")
 
     self.logger = logger
     self.name = name
 
     self.handler = None
 
+
+  @property 
+  def nodemap(self):
+    return self.camera.GetNodeMap()
+  
+  @property
+  def stream_nodemap(self):
+    return self.camera.GetTLStreamNodeMap()
+
   @beartype
   def load_config(self, config:Settings, mode:str="slave"):
-
     self.log(logging.INFO, f"Loading camera configuration ({mode})...")
     helpers.load_defaults(self.camera)
 
-    self.set_value("TLParamsLocked", 0)
-    self._set_settings(self.transport, config['transport_layer'])
-    self.set_value("TLParamsLocked", 1)
-
+    self._set_settings(self.stream_nodemap, config['stream'])
     self._set_settings(self.nodemap, config['device'])
     self._set_settings(self.nodemap, config[mode])
 
@@ -64,18 +69,21 @@ class Camera(Dispatcher):
           self.log(logging.WARNING, f"Failed to set {setting_name} to {value}: {e}")
 
 
-  def get_value(self, node_name:str):
-    return helpers.get_value(self.nodemap, node_name)
-
-  def set_value(self, node_name:str, value:int):
-    helpers.set_value(self.nodemap, node_name, value)
 
 
   def log(self, level:int, message:str):
     self.logger.log(level, f"{self.name}:{message}")
 
   def _image_event(self, image):
-    self.emit("on_image", Buffer(self.name, image))
+    if image.IsIncomplete():
+      self.log(logging.WARNING, "Recieved incomplete buffer")
+      image.Release()
+
+    else:
+      try:
+        self.emit("on_image", Buffer(self.name, image))
+      except Exception as e:
+        self.log(logging.ERROR, f"Error handling image: {repr(e)}")
 
   @property
   def started(self):
@@ -83,19 +91,18 @@ class Camera(Dispatcher):
     
   def start(self):
     assert not self.started, f"Camera {self.name} is already started"
-    self.logger.info("{self.name}:Starting camera capture...")
+    self.log(logging.INFO, "Starting camera capture...")
 
     self.handler = ImageEventHandler(self._image_event)
     self.camera.RegisterEventHandler(self.handler)    
 
     self.camera.BeginAcquisition()
-    if helpers.validate_streaming(self.camera):
+    if not helpers.validate_streaming(self.camera):
       raise RuntimeError(f"Camera {self.name} did not begin streaming")
 
     self.log(logging.INFO, "started.")
 
     self.emit("on_started", True)
-    self.capture_thread.start()
 
   def stop(self):
     assert self.started, f"Camera {self.name} is not started"
@@ -113,3 +120,4 @@ class Camera(Dispatcher):
       self.stop()
 
     self.camera.DeInit()
+    del self.camera

@@ -1,6 +1,8 @@
+backend: spinnaker
+
 camera_settings:
   device:
-    - UserSetSelector: Default
+    # - UserSetSelector: Default
     - PixelFormat: BayerRG12p
 
     # Turn all the auto off
@@ -15,7 +17,7 @@ camera_settings:
     - ChunkSelector: "Timestamp"
     - ChunkEnable: True
 
-  transport_layer:
+  stream:
     - StreamBufferCountMode: Manual
     - StreamBufferCountManual: 2
     - StreamBufferHandlingMode: OldestFirst

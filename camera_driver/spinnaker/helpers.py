@@ -41,12 +41,9 @@ def get_node(nodemap, node_name):
     raise NodeException(suggest_node(nodemap, node_name))
 
   t = node.GetPrincipalInterfaceType()
-  if not t in node_type_mapping:
+  if t not in node_type_mapping:
     raise NodeException(f'Node type for {node_name} not supported {t}')
   return node_type_mapping[t](node)
-
-
-
 
 
 def get_writable(nodemap, node_name):
@@ -57,8 +54,6 @@ def get_writable(nodemap, node_name):
   if not PySpin.IsWritable(node):
     raise NodeException('Node not writable {}. '.format(node_name))
   return node
-
-
 
   
   
@@ -82,7 +77,7 @@ def get_value(nodemap, node_name):
 def try_get_value(nodemap, node_name, default=None):
   try:
     return get_value(nodemap, node_name)
-  except NodeException as e:
+  except NodeException:
     return default
 
 
@@ -166,18 +161,16 @@ def camera_time_offset(cam, get_time_ns:Callable, iters=50):
 
 
 def execute(nodemap, node_name):
-    # print("Execute", node_name)
     node = PySpin.CCommandPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
         raise NodeException(suggest_node(nodemap, node_name))
-    node.Execute()
+    
+    node.Execute(True)
 
 
-def reset_camera(camera):
+def reset_camera(camera:PySpin.CameraPtr):
     camera.Init()
     nodemap = camera.GetNodeMap()
-
-    # This often just freezes on re-runs, and everything seems to be OK without it. Is it necessary?
     execute(nodemap, "DeviceReset")  
     camera.DeInit()
 
@@ -189,37 +182,9 @@ def load_defaults(camera):
 
 
 
-def load_defaults(camera):
-    nodemap = camera.GetNodeMap()
-    set_enum(nodemap, "UserSetSelector", "Default")
-    execute(nodemap, "UserSetLoad")
-
 def trigger(camera):
     nodemap = camera.GetNodeMap()
     execute(nodemap, "TriggerSoftware")
-
-
-def trigger_slave(camera : PySpin.Camera):
-    nodemap = camera.GetNodeMap()
-
-    set_enum(nodemap, "LineSelector", "Line3")
-    set_enum(nodemap, "TriggerSource", "Line3")
-    set_enum(nodemap, "TriggerSelector", "FrameStart")
-    set_enum(nodemap, "LineMode", "Input")
-    set_enum(nodemap, "TriggerOverlap", "ReadOut")
-    set_enum(nodemap, "TriggerActivation", "RisingEdge")
-    set_enum(nodemap, "TriggerMode", "On")
-
-
-def trigger_master(camera : PySpin.Camera, free_running : bool):
-  nodemap = camera.GetNodeMap()
-
-  set_enum(nodemap, "LineSelector", "Line2")
-  set_enum(nodemap, "LineMode", "Output")
-  set_enum(nodemap, "TriggerSource", "Software")
-
-  if not free_running:
-    set_enum(nodemap, "TriggerMode", "On")
 
 
 

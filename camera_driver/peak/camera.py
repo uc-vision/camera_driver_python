@@ -72,7 +72,7 @@ class Camera(Dispatcher):
 
     
   def start(self):
-    self.logger.info("{self.name}:Starting camera capture...")
+    self.log(logging.INFO, "Starting camera capture...")
     self._setup_buffers()
 
     self.capture_thread = Thread(target=self._capture_thread)

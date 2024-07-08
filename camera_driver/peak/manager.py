@@ -1,11 +1,13 @@
 
 from logging import Logger
-from typing import List
+from typing import List, Optional, Set
 
 from ids_peak import ids_peak
 from .camera import Camera
+from camera_driver import interface
 
-class Manager:
+
+class Manager(interface.Manager):
     def __init__(self, logger:Logger):
 
       self.logger = logger
@@ -16,16 +18,20 @@ class Manager:
       self.device_manager = ids_peak.DeviceManager.Instance()
       self.device_manager.Update()      
 
-    def _device_dict(self):
+    def _devices(self):
       devices = self.device_manager.Devices()
       return {device.SerialNumber(): device for device in devices}
 
 
-    def camera_serials(self) -> List[str]:
-      return list(self._device_dict().keys())
+    def camera_serials(self) -> Set[str]:
+      return set(self._devices().keys())
 
+
+    def reset_cameras(self, camera_set:Set[str]):
+      assert camera_set <= self.camera_serials, f"Camera(s) not found {camera_set - self.camera_serials()}"
+      assert False, "Not implemented"
 
 
     def init_camera(self, name:str, serial:str) -> Camera:
-      device = self._device_dict()[serial]
+      device = self._devices()[serial]
       return Camera(name, device.OpenDevice(ids_peak.DeviceAccessType_Control), logger=self.logger)
