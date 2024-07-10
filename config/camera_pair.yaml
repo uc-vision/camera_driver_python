@@ -3,7 +3,7 @@ cameras:
   right: 19423933
 
 master: left
-reset_cycle: false 
+reset_cycle: True 
 
 device: cuda:0
 preview_size: 200

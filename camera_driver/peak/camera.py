@@ -1,15 +1,18 @@
 
+from ast import Tuple
 from logging import Logger
 import logging
 from threading import Thread
-from typing import  Optional
+from typing import  Callable, Optional
 from ids_peak import ids_peak
 
 from pydispatch import Dispatcher
+
+from camera_driver.image.encoding import ImageEncoding, camera_encodings
 from .buffer import Buffer
 
 class Camera(Dispatcher):
-  _events_ = ["on_started", "on_image"]
+  _events_ = ["on_started", "on_buffer"]
 
   def __init__(self, name:str, device:ids_peak.Device, logger:Logger):
     self.device = device
@@ -27,6 +30,36 @@ class Camera(Dispatcher):
     self.started = False
 
     self.name = name
+
+
+  def compute_clock_offset(self, get_time_sec:Callable[[], float]):
+    pass
+    
+
+  @property
+  def image_size(self) -> Tuple[int, int]:
+    w = self.node_value("Width").Value()
+    h = self.node_value("Height").Value()
+    return w, h
+
+  
+  @property
+  def encoding(self) -> ImageEncoding:
+    pixel_format = self.node_value("PixelFormat")
+    return camera_encodings[pixel_format]
+    
+  @property
+  def serial(self) -> str:
+    nodemap_tldevice = self.device.GetTLDeviceNodeMap()
+    return nodemap_tldevice.FindNode("DeviceSerialNumber").Value()
+  
+
+  def __repr__(self):
+    w, h = self.image_size
+    return f"peak.Camera({self.name}:{self.serial} {w}x{h} {self.encoding})"
+
+
+
 
   def _setup_buffers(self):
     self.nodemap.FindNode("PayloadSize").Value()
@@ -65,7 +98,7 @@ class Camera(Dispatcher):
         continue  
             
       buffer = Buffer(self.name, raw_buffer)
-      self.emit("on_image", buffer)
+      self.emit("on_buffer", buffer)
 
   def log(self, level:int, message:str):
     self.logger.log(level, f"{self.name}:{message}")

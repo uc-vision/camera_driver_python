@@ -1,4 +1,4 @@
-from typing import Set
+from typing import Callable, Set
 import abc
 import importlib
 import logging
@@ -7,6 +7,7 @@ import torch
 
 from pydispatch import Dispatcher
 from camera_driver.image.camera_image import CameraImage
+from camera_driver.image.encoding import ImageEncoding
 
 
 class Buffer(metaclass=abc.ABCMeta):
@@ -19,11 +20,8 @@ class Buffer(metaclass=abc.ABCMeta):
     pass
   
 
-
-
-
 class Camera(Dispatcher, metaclass=abc.ABCMeta):
-  _events_ = ["on_started", "on_image"]
+  _events_ = ["on_started", "on_buffer"]
 
   @abc.abstractmethod
   def load_config(self, config:dict, mode:str="slave"):
@@ -40,6 +38,25 @@ class Camera(Dispatcher, metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def release(self):
+    pass
+
+
+  def compute_clock_offset(self, get_time_sec:Callable[[], float]):
+    pass
+
+  @property
+  @abc.abstractmethod
+  def image_size(self):
+    pass
+
+  @property
+  @abc.abstractmethod
+  def encoding(self) -> ImageEncoding:
+    pass
+  
+  @property
+  @abc.abstractmethod
+  def serial(self) -> str:
     pass
 
 

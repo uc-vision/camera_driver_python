@@ -1,13 +1,12 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import  Tuple
+from typing import  Optional, Tuple
 import warnings
 from beartype import beartype
 
 import numpy as np
 import torch
 from .encoding import ImageEncoding
-
 
 
 @beartype
@@ -17,7 +16,6 @@ class CameraImage:
   image_data: torch.Tensor
 
   timestamp_sec: float
-  offset_sec: float
 
   image_size: Tuple[int, int]
   encoding: ImageEncoding
@@ -35,3 +33,20 @@ def numpy_image(arr:np.array, device=torch.device("cpu")):
   with warnings.catch_warnings():
     warnings.simplefilter("ignore", category=UserWarning)
     return torch.from_numpy(arr).to(device=device, non_blocking=True)
+
+
+@beartype
+@dataclass
+class CameraSettings:
+  name : str
+
+  time_offset_sec:float
+  serial:str
+  
+  image_size:Tuple[int, int]
+  encoding : ImageEncoding
+
+  def __repr__(self):
+    
+    w, h = self.image_size
+    return f"CameraSettings({self.name}:{self.serial} {w}x{h} {self.encoding} offset={self.time_offset_sec}sec)"

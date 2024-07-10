@@ -7,7 +7,7 @@ from camera_driver.image import CameraImage
 import PySpin
 
 from camera_driver.image.camera_image import numpy_image
-from camera_driver import interface
+from camera_driver import camera_interface
 from camera_driver.image.encoding import ImageEncoding
 
 
@@ -28,7 +28,7 @@ pyspin_encoding = {
 
 
 
-class Buffer(interface.Buffer):
+class Buffer(camera_interface.Buffer):
   def __init__(self, camera_name:str, image:PySpin.Image):
     assert not image.IsIncomplete()
 

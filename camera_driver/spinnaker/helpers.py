@@ -1,14 +1,12 @@
 
 from numbers import Number
-from typing import Callable, Dict, List
+from typing import Any, Callable, Dict,  Tuple
 import PySpin
 import statistics
 from beartype import beartype
 
 from disable_gc import disable_gc
 from fuzzywuzzy import process
-
-import gc
 
 
 
@@ -19,8 +17,7 @@ def suggest_node(nodemap, k, threshold=50):
   
   nearest, score = process.extractOne(k, names)
   suggest = "" if score < threshold else ", did you mean '{}' ({})?".format(nearest, score)
-  return 'Node not available {}'.format(k, suggest)
-
+  return f"Node {k} not available {suggest}"
 
 class NodeException(RuntimeError):
   def __init__(self, msg):
@@ -35,7 +32,7 @@ node_type_mapping = {
    9: PySpin.CEnumerationPtr
 }
 
-def get_node(nodemap, node_name):
+def get_node(nodemap:PySpin.INodeMap, node_name:str):
   node = nodemap.GetNode(node_name)
   if node is None:
     raise NodeException(suggest_node(nodemap, node_name))
@@ -46,7 +43,7 @@ def get_node(nodemap, node_name):
   return node_type_mapping[t](node)
 
 
-def get_writable(nodemap, node_name):
+def get_writable(nodemap:PySpin.INodeMap, node_name:str):
   node = get_node(nodemap, node_name)
   if not PySpin.IsAvailable(node):
     raise NodeException(suggest_node(nodemap, node_name))
@@ -57,7 +54,7 @@ def get_writable(nodemap, node_name):
 
   
   
-def get_readable(nodemap, node_name):
+def get_readable(nodemap:PySpin.INodeMap, node_name:str):
   node = get_node(nodemap, node_name)
     
   if not PySpin.IsAvailable(node):
@@ -67,7 +64,7 @@ def get_readable(nodemap, node_name):
     raise NodeException('Node not readable {}. '.format(node_name))
   return node
 
-def get_value(nodemap, node_name):
+def get_value(nodemap:PySpin.INodeMap, node_name:str):
   node = get_readable(nodemap, node_name)
   if isinstance(node, PySpin.CEnumerationPtr):
      return node.GetCurrentEntry().GetSymbolic()
@@ -81,7 +78,7 @@ def try_get_value(nodemap, node_name, default=None):
     return default
 
 
-def set_value(nodemap, node_name, value):
+def set_value(nodemap:PySpin.INodeMap, node_name:str, value:Any):
   try:
     node = get_writable(nodemap, node_name)
     if isinstance(node, PySpin.CEnumerationPtr):
@@ -108,51 +105,51 @@ def set_value(nodemap, node_name, value):
 
 
 @beartype
-def set_bool(nodemap, node_name:str, value:bool):
+def set_bool(nodemap:PySpin.INodeMap, node_name:str, value:bool):
   return set_value(nodemap, node_name, value)
 
 @beartype
-def set_float(nodemap, node_name:str, value:Number):
+def set_float(nodemap:PySpin.INodeMap, node_name:str, value:Number):
   return set_value(nodemap, node_name, value)
 
 @beartype
-def set_int(nodemap, node_name:str, value:int):
+def set_int(nodemap:PySpin.INodeMap, node_name:str, value:int):
   return set_value(nodemap, node_name, value)
 
 
 @beartype
-def set_enum(nodemap, node_name:str, value:str):
+def set_enum(nodemap:PySpin.INodeMap, node_name:str, value:str):
   return set_value(nodemap, node_name, value)
 
-def try_set_value(nodemap, node_name:str, value):
+def try_set_value(nodemap:PySpin.INodeMap, node_name:str, value):
   try:
       return set_value(nodemap, node_name, value)
   except PySpin.SpinnakerException as e:
       return get_value(nodemap, node_name)
 
 @beartype
-def try_set_bool(nodemap, node_name:str, value:bool):
+def try_set_bool(nodemap:PySpin.INodeMap, node_name:str, value:bool):
   return try_set_value(nodemap, node_name, value)
 
 @beartype
-def try_set_float(nodemap, node_name:str, value:Number):
+def try_set_float(nodemap:PySpin.INodeMap, node_name:str, value:Number):
   return try_set_value(nodemap, node_name, value)
 
 @beartype
-def try_set_int(nodemap, node_name:str, value:int):
+def try_set_int(nodemap:PySpin.INodeMap, node_name:str, value:int):
   return try_set_value(nodemap, node_name, value)
 
 
 @disable_gc
-def camera_time_offset(cam, get_time_ns:Callable, iters=50):
+def camera_time_offset(cam:PySpin.Camera, get_time_sec:Callable[[], float], iters:int=50):
     """ Gets timestamp offset in seconds from camera to system clock """
 
     timestamp_offsets = []
     for i in range(iters):
         cam.TimestampLatch.Execute()
 
-        # Compute timestamp offset in seconds; note that timestamp latch value is in nanoseconds
-        timestamp_offset = get_time_ns() - cam.TimestampLatchValue.GetValue()
+        # Compute timestamp offset in seconds; note that timestamp latch value is in seconds
+        timestamp_offset = get_time_sec() - float(cam.TimestampLatchValue.GetValue()) / 1e9
         timestamp_offsets.append(timestamp_offset)
 
     # Return the median value
@@ -160,7 +157,7 @@ def camera_time_offset(cam, get_time_ns:Callable, iters=50):
 
 
 
-def execute(nodemap, node_name):
+def execute(nodemap:PySpin.INodeMap, node_name:str):
     node = PySpin.CCommandPtr(nodemap.GetNode(node_name))
     if not PySpin.IsAvailable(node) or not PySpin.IsWritable(node):
         raise NodeException(suggest_node(nodemap, node_name))
@@ -174,7 +171,7 @@ def reset_camera(camera:PySpin.CameraPtr):
     execute(nodemap, "DeviceReset")  
     camera.DeInit()
 
-def load_defaults(camera):
+def load_defaults(camera: PySpin.Camera):
     nodemap = camera.GetNodeMap()
 
     set_enum(nodemap, "UserSetSelector", "Default")
@@ -182,36 +179,34 @@ def load_defaults(camera):
 
 
 
-def trigger(camera):
+def trigger(camera: PySpin.Camera):
     nodemap = camera.GetNodeMap()
     execute(nodemap, "TriggerSoftware")
 
 
 
-def dict_item(d):
+def dict_item(d:Dict):
     k = next(iter(d)) # setting.keys()[0]
     v = d[k]
     return k, v
 
 
-
-
-def get_camera_serial(cam):
+def get_camera_serial(cam : PySpin.Camera):
     nodemap_tldevice = cam.GetTLDeviceNodeMap()
     node_device_serial_number = PySpin.CStringPtr(nodemap_tldevice.GetNode('DeviceSerialNumber'))
     device_serial_number = node_device_serial_number.GetValue()
     return int(device_serial_number)
 
 
-def validate_init(camera):
+def validate_init(camera : PySpin.Camera):
     return camera.IsValid() and camera.IsInitialized()
 
 
-def validate_streaming(camera):
+def validate_streaming(camera : PySpin.Camera):
     return validate_init(camera) and camera.IsStreaming()
 
 
-def get_image_size(camera : PySpin.Camera):
+def get_image_size(camera : PySpin.Camera) -> Tuple[int, int]:
     node_map = camera.GetNodeMap()
 
     w = get_value(node_map, "Width")

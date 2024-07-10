@@ -1,15 +1,18 @@
 
 from logging import Logger
 import logging
-from typing import  Dict, List
+from typing import  Callable, Dict, List
 import PySpin
 
 from beartype import beartype
+
+from camera_driver.image.encoding import ImageEncoding
 from .buffer import Buffer
 
-from camera_driver import interface
+from camera_driver import camera_interface
 
 from . import helpers
+from .buffer import pyspin_encoding
 
 SettingList = List[Dict]
 Settings = Dict[str, SettingList]
@@ -24,7 +27,7 @@ class ImageEventHandler(PySpin.ImageEventHandler):
     self.on_image(image)
 
 
-class Camera(interface.Camera):
+class Camera(camera_interface.Camera):
 
   @beartype
   def __init__(self, name:str, camera:PySpin.CameraPtr, logger:Logger):
@@ -38,6 +41,31 @@ class Camera(interface.Camera):
     self.name = name
 
     self.handler = None
+
+
+  def compute_clock_offset(self, get_time_sec:Callable[[], float]):
+    return helpers.camera_time_offset(self.camera, get_time_sec)
+
+  @property
+  def image_size(self):
+    return helpers.get_image_size(self.camera)
+  
+  @property
+  def encoding(self) -> ImageEncoding:
+      pixel_format = helpers.get_value(self.nodemap, "PixelFormat")
+
+      if pixel_format not in pyspin_encoding:
+        raise ValueError(f"Unsupported pixel format {pixel_format}")
+      return pyspin_encoding[pixel_format]
+  
+  @property
+  def serial(self) -> str:
+    return helpers.get_camera_serial(self.camera)
+  
+
+  def __repr__(self):
+    w, h = self.image_size
+    return f"spinnaker.Camera({self.name}:{self.serial} {w}x{h} {self.encoding})"
 
 
   @property 
@@ -69,8 +97,6 @@ class Camera(interface.Camera):
           self.log(logging.WARNING, f"Failed to set {setting_name} to {value}: {e}")
 
 
-
-
   def log(self, level:int, message:str):
     self.logger.log(level, f"{self.name}:{message}")
 
@@ -81,7 +107,7 @@ class Camera(interface.Camera):
 
     else:
       try:
-        self.emit("on_image", Buffer(self.name, image))
+        self.emit("on_buffer", Buffer(self.name, image))
       except Exception as e:
         self.log(logging.ERROR, f"Error handling image: {repr(e)}")
 

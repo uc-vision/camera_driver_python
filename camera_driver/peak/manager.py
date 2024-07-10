@@ -1,13 +1,13 @@
 
 from logging import Logger
-from typing import List, Optional, Set
+from typing import Set
 
 from ids_peak import ids_peak
 from .camera import Camera
-from camera_driver import interface
+from camera_driver import camera_interface
 
 
-class Manager(interface.Manager):
+class Manager(camera_interface.Manager):
     def __init__(self, logger:Logger):
 
       self.logger = logger

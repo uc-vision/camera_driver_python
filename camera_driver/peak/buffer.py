@@ -1,4 +1,3 @@
-import warnings
 from ids_peak import ids_peak
 from ids_peak import ids_peak_ipl_extension
 
@@ -8,10 +7,10 @@ import torch
 from camera_driver.image import CameraImage, camera_encodings
 from camera_driver.image.camera_image import numpy_image
 
-from camera_driver import interface
+from camera_driver import camera_interface
 
 
-class Buffer(interface.Buffer):
+class Buffer(camera_interface.Buffer):
   def __init__(self, camera_name:str, buffer:ids_peak.Buffer):
     assert not buffer.IsIncomplete()
 
