@@ -22,6 +22,7 @@ class WorkQueue():
 
     
   def enqueue(self, data):
+      assert self.started, f"WorkQueue {self.name} not started"
       return self.queue.put( data )
   
   def run_worker(self):
@@ -38,6 +39,9 @@ class WorkQueue():
         
         
         
+  @property
+  def started(self):
+    return self.workers is not None
 
   def stop(self):
     self.logger.loginfo(f"Waiting for {self.name}: threads {self.workers}")

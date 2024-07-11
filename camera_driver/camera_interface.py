@@ -1,8 +1,10 @@
+from enum import Enum
 from typing import Callable, Set
 import abc
 import importlib
 import logging
 
+from beartype import beartype
 import torch
 
 from pydispatch import Dispatcher
@@ -79,15 +81,20 @@ class Manager(metaclass=abc.ABCMeta):
     pass
 
 
+class BackendType(Enum):
+  peak = "peak"
+  spinnaker = "spinnaker"
 
-def create_manager(backend:str, logger:logging.Logger):
-  if backend == "spinnaker":
+
+@beartype
+def create_manager(backend:BackendType, logger:logging.Logger):
+  if backend is BackendType.spinnaker:
     if importlib.util.find_spec("ids_peak") is None:      
       raise ImportError("Failed to import PySpin. Please install the Spinnaker SDK.")
 
     from camera_driver import spinnaker
     return spinnaker.Manager(logger)
-  elif backend == "peak":
+  elif backend is BackendType.peak:
 
     if importlib.util.find_spec("ids_peak") is None:
       raise ImportError("Failed to import ids_peak. Please install the IDS Peak SDK.")

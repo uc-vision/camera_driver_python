@@ -135,10 +135,11 @@ class Camera(camera_interface.Camera):
     self.logger.info(f"{self.name}:Stopping camera capture...")
 
     self.camera.UnregisterEventHandler(self.handler)    
+    self.handler = None
+    
     self.camera.EndAcquisition()
 
     self.log(logging.INFO, "stopped.")
-
     self.emit("on_started", False)
 
   def release(self):
@@ -146,4 +147,4 @@ class Camera(camera_interface.Camera):
       self.stop()
 
     self.camera.DeInit()
-    del self.camera
+    self.camera = None

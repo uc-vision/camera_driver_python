@@ -47,7 +47,6 @@ class Buffer(camera_interface.Buffer):
       image_data = numpy_image(image_data, device=device),
 
       timestamp_sec=float(self._image.GetTimeStamp()) / 1e9,
-      offset_sec = 0.,
       
       image_size = (self._image.GetWidth(), self._image.GetHeight()),
       encoding = pyspin_encoding[pixel_format]

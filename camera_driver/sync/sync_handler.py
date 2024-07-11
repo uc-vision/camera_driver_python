@@ -9,17 +9,17 @@ from pydispatch import Dispatcher
 
 from .frame_grouper import FrameGrouper
 
-
+TimeQuery = Callable[[], float]
 
 
 class SyncHandler(Dispatcher):
-  _events_ = ["on_image_set"]
+  _events_ = ["on_group"]
 
   def __init__(self, time_offsets:Dict[str, float], 
           sync_threshold:float, 
           sync_timeout:float, 
 
-          query_time:Callable[[], float],
+          query_time:TimeQuery,
           device:torch.device,
           
           logger:logging.Logger):
@@ -37,16 +37,25 @@ class SyncHandler(Dispatcher):
     self.query_time = query_time
     
 
+
   @property
   def num_cameras(self):
     return len(self.grouper.num_cameras)
+  
 
-  def process_image(self, buffer:Buffer):
+  def push_image(self, buffer:Buffer):
+    if not self.work_queue.started:
+      self.work_queue.start()
+
+    self.work_queue.push(buffer)
+
+
+  def _process_image(self, buffer:Buffer):
     image = buffer.image(device=self.device)
     group = self.grouper.add_frame(image)
 
     if group is not None:
-      self.dispatch("on_image_set", group)
+      self.emit("on_group", group)
 
     timed_out = self.grouper.timeout_groups(self.query_time())
     for group in timed_out:
@@ -54,11 +63,8 @@ class SyncHandler(Dispatcher):
 
     buffer.release()
 
-  def start(self):
-    self.work_queue.start()
 
-
-  def stop(self):
+  def flush(self):
     self.work_queue.stop()
     self.grouper.clear()
 

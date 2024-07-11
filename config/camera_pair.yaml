@@ -1,29 +1,38 @@
+backend: spinnaker
+
 cameras:
   left: 20068364 
   right: 19423933
 
-master: left
+master: right
 reset_cycle: True 
 
 device: cuda:0
-preview_size: 200
 
 sync_threshold_msec: 10   # threshold to consider images from the same trigger
 timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
 
-parameters:
-  # parameters which are adjustable
 
+parameters:
+  # camera parameters
   exposure: 2000
-  gain: 0.0
-  max_framerate: 10
-  balance_ratio: 1.0
+
+  # Tonemapping parameters
+  tone_gamma: 1.0
+  tone_intensity : 2.0
+
+  light_adapt : 1.0
+  color_adapt : 0.0
+
+  tone_mapping: reinhard   # linear | reinhard
+  
+  # Moving average to smooth intensity scaling over time
+  moving_average : 0.02
 
   # image processing parameters
   jpeg_quality: 96
   resize_width: 3072 
-
-  tone_mapping: reinhard
+  preview_size: 200
 
   # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
   transform: rotate_90

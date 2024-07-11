@@ -1,5 +1,3 @@
-backend: spinnaker
-
 camera_settings:
   device:
     # - UserSetSelector: Default

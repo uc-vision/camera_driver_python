@@ -53,10 +53,9 @@ class FrameGrouper():
   def num_cameras(self):
     return len(self.time_offsets)
   
-
   def clear(self):
     self.groups = []
-      
+    
 
   def group_frame(self, frame:CameraImage) -> FrameGroup:
     for group in self.groups:

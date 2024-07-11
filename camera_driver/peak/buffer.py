@@ -26,7 +26,6 @@ class Buffer(camera_interface.Buffer):
       image_data = numpy_image(arr, device=device),
 
       timestamp_sec=float(self._buffer.Timestamp_ns()) / 1e9,
-      offset_ns = 0.,
       
       image_size = (img.Width(), img.Height()),
       encoding = camera_encodings[img.PixelFormat().Name()]

@@ -35,7 +35,7 @@ class Manager(camera_interface.Manager):
       return Camera(name, camera, logger=self.logger)
     
 
-    def wait_for_cameras(self, camera_set:Set[str]):
+    def wait_for_cameras(self, cameras:Dict[str, str]):
       queue = Queue(1)
       handler = ResetHandler(on_added=queue.put)
 
@@ -43,16 +43,26 @@ class Manager(camera_interface.Manager):
       for iface in interfaces:
         iface.RegisterEventHandler(handler)
 
-      while len(camera_set) > 0:
-        self.logger.debug(f"Waiting for cameras {camera_set}")
+      by_serial = {serial:k for k, serial in cameras.items()}
+      cameras_found = {}
 
-        serial = queue.get()
-        if serial in camera_set:
-          camera_set.remove(serial)
-          self.logger.info(f"Camera {serial} found.")
+      while len(by_serial) > 0:
+        self.logger.debug(f"Waiting for cameras {by_serial}")
+
+        camera = queue.get()
+        serial = str(helpers.get_camera_serial(camera))
+        if serial in by_serial:
+
+          name = by_serial[serial]
+          cameras_found[serial] = Camera(name, camera, self.logger)
+          self.logger.info(f"Camera {name}:{serial} found.")
+
+          del by_serial[serial]      
 
       for iface in interfaces:
         iface.UnregisterEventHandler(handler)
+
+      return cameras_found
 
 
     def reset_cameras(self, camera_set:Set[str]):
@@ -63,8 +73,7 @@ class Manager(camera_interface.Manager):
 
       for camera in cameras.values():
         helpers.reset_camera(camera)
-      self.wait_for_cameras(set(cameras.keys()))
-
+      
       self.logger.info("Done.")
 
 
@@ -82,7 +91,7 @@ class ResetHandler(PySpin.InterfaceEventHandler):
         self.on_added = on_added
 
     def OnDeviceArrival(self, camera):
-        self.on_added(helpers.get_camera_serial(camera))
+        self.on_added(camera)
 
     def OnDeviceRemoval(self, camera):
         pass
