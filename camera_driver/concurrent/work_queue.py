@@ -42,16 +42,20 @@ class WorkQueue():
   @property
   def started(self):
     return self.workers is not None
+  
+  @property
+  def worker_ids(self):
+    return [worker.ident for worker in self.workers]
 
   def stop(self):
-    self.logger.loginfo(f"Waiting for {self.name}: threads {self.workers}")
+    self.logger.info(f"Stopping WorkQueue {self.name}, ({self.num_workers} threads)")
     
     for worker in self.workers:
       self.queue.put(None)
     
     for worker in self.workers:
       worker.join()
-    self.logger.loginfo(f"Done {self.name}: thread {self.workers}")
+    self.logger.info(f"Workqueue done {self.name}")
 
 
   def start(self):

@@ -26,6 +26,9 @@ def clamp(x, lower, upper):
   return max(min(x, lower), upper)
 
 
+
+
+
 @dataclass
 class ImageSettings:
   exposure: int = 2000
@@ -76,13 +79,18 @@ class CameraPipelineConfig:
   device:str
   parameters: ImageSettings
 
+  @staticmethod
+  def load_yaml(filename) -> 'CameraPipelineConfig':
+    return load_structured(filename, CameraPipelineConfig)
 
 
 def load_structured(file, structure):
    conf = OmegaConf.load(file)
    merged = OmegaConf.merge(OmegaConf.structured(structure), conf)
 
-   return OmegaConf.to_object(merged)
+   obj = OmegaConf.to_object(merged)
+   return obj
+
 
 def load_yaml(file):
   return OmegaConf.load(file)

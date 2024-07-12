@@ -15,6 +15,7 @@ camera_settings:
     - ChunkSelector: "Timestamp"
     - ChunkEnable: True
 
+
   stream:
     - StreamBufferCountMode: Manual
     - StreamBufferCountManual: 2
@@ -28,11 +29,15 @@ camera_settings:
     - LineMode: Input
     - TriggerOverlap: ReadOut
     - TriggerActivation: RisingEdge
-    - TriggerMode: "On"
-
+    - TriggerMode: "On"  # not a boolean, but an enum On or Off
+ 
   
   master:
     - LineSelector: Line2
     - LineMode: Output
     - TriggerSource: Software
+
+    - AcquisitionFrameRateEnable: True
+    - AcquisitionFrameRate: 5.0
+
     

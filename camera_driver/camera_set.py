@@ -1,5 +1,9 @@
 import logging
-from typing import Dict
+from typing import Callable, Dict
+
+from beartype import beartype
+
+from camera_driver.sync.sync_handler import TimeQuery
 
 from .camera_interface  import Buffer, Camera
 from pydispatch import Dispatcher
@@ -13,15 +17,13 @@ class CameraSet(Dispatcher):
                cameras:Dict[str, Camera], 
                logger:logging.Logger):
 
-    self.started = False
+    self.is_started = False
     self.cameras = cameras
 
     self.logger = logger
 
-
-
-
-  def compute_clock_offsets(self, get_timestamp):
+  @beartype
+  def compute_clock_offsets(self, get_timestamp:TimeQuery):
     return {name:camera.compute_clock_offset(get_timestamp) 
                   for name, camera in self.cameras.items()}
   
@@ -54,7 +56,7 @@ class CameraSet(Dispatcher):
       camera.unbind(self.on_buffer)
       camera.stop()
 
-    self.is_started = True
+    self.is_started = False
 
 
   def release(self):
@@ -64,4 +66,3 @@ class CameraSet(Dispatcher):
     for _, camera in self.cameras.items():
       camera.release()
 
-    self.cameras = None

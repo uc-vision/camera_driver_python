@@ -3,13 +3,23 @@
 import logging
 from typing import Dict
 
-from camera_driver.camera_interface import create_manager
+from beartype import beartype
+import torch
+
+from camera_driver.camera_interface import Camera, create_manager
 from camera_driver.camera_set import CameraSet
 from camera_driver.config import CameraPipelineConfig
-from camera_driver.image.camera_image import CameraImage
+from camera_driver.image.camera_image import CameraImage, CameraInfo
+from camera_driver.image.frame_processor import FrameProcessor
+from camera_driver.image.image_outputs import ImageOutputs
 from camera_driver.sync.sync_handler import SyncHandler, TimeQuery
 
+from pydispatch import Dispatcher
 
+
+
+
+@beartype
 def cameras_from_config(config:CameraPipelineConfig, camera_settings:Dict[str, Dict], logger:logging.Logger):
 
   manager = create_manager(config.backend, logger)
@@ -33,10 +43,19 @@ def cameras_from_config(config:CameraPipelineConfig, camera_settings:Dict[str, D
     
   return cameras, manager
 
+def get_camera_info(name:str, camera:Camera):
+  return CameraInfo(
+    name=name,
+    serial=camera.serial,
+    image_size=camera.image_size,
+    encoding=camera.encoding,
+  )
 
 
-class CameraPipeline:
+class CameraPipeline(Dispatcher):
+  _events_ = ["on_image_set", "on_stopped"]
 
+  @beartype
   def __init__(self, config:CameraPipelineConfig, camera_settings:Dict[str, Dict], logger:logging.Logger, query_time:TimeQuery):
     self.config = config
     self.query_time = query_time
@@ -47,24 +66,36 @@ class CameraPipeline:
     self.sync_handler = None
     self.manager = manager
     self.logger = logger
+
+    camera_info = {name:get_camera_info(name, camera) for name, camera in cameras.items()}
+    
+    self.processor = FrameProcessor(camera_info, settings=config.parameters, 
+                                    logger=logger, device=torch.device(config.device))
+    
+    self.logger.info("Warmup frame processor")
+    self.processor.warmup()
+
+    self.processor.bind(on_frame=self.on_image_set)
+
     
 
-  def on_image_set(self, group:Dict[str, CameraImage]):
-    print(group)
+  def on_image_set(self, group:Dict[str, ImageOutputs]):
+    self.emit("on_image_set", group)
   
 
   def start(self):
     self.logger.info("Starting camera pipeline")
-    self.sync_handler = SyncHandler(offsets=self.camera_set.compute_clock_offsets(),
+
+    timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
+    self.sync_handler = SyncHandler(time_offsets=timestamp_offsets,
                                     sync_threshold=self.config.sync_threshold_msec / 1000.,
                                     sync_timeout=self.config.timeout_msec / 1000.,
 
                                     query_time=self.query_time, 
-                                    device=self.config.device,
+                                    device=torch.device(self.config.device),
                                     logger=self.logger)    
 
-
-    self.sync_handler.bind("on_group", self.on_image_set)
+    self.sync_handler.bind(on_group=self.processor.process_image_set)
 
     self.camera_set.bind(on_buffer=self.sync_handler.push_image)
     self.camera_set.start()
@@ -79,10 +110,13 @@ class CameraPipeline:
     assert self.is_started, "Camera pipeline not started"
     self.logger.info("Stopping camera pipeline")
 
+    self.processor.stop()
+
     self.camera_set.release()
     self.sync_handler.flush()
     self.sync_handler = None
 
+    self.emit("on_stopped")
     self.logger.info("Stopped camera pipeline")
 
 

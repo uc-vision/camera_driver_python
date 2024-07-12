@@ -13,11 +13,12 @@ maintainers = [
 dependencies = [
   "beartype",
   "python-dispatch",
-  "nvjpeg-torch",
+  "nvjpeg-torch>=0.1.2",
   "taichi_image",
   "disable_gc",
   "fuzzywuzzy",
-  "numpy < 2.0"
+  "numpy < 2.0",
+  "omegaconf"
 ]
 
 

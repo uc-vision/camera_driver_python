@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import  Optional, Tuple
 import warnings
@@ -7,6 +7,8 @@ from beartype import beartype
 import numpy as np
 import torch
 from .encoding import ImageEncoding
+
+from camera_geometry import Camera
 
 
 @beartype
@@ -20,12 +22,28 @@ class CameraImage:
   image_size: Tuple[int, int]
   encoding: ImageEncoding
 
+
+  @property
+  def device(self):
+    return self.image_data.device
+
+
+
+  @property
+  def datetime(self):
+    return datetime.fromtimestamp(self.timestamp_sec)
+  
+  @property
+  def stamp_pretty(self):
+    return self.datetime.strftime('%M%S.3f')
+
+  def with_timestamp(self, timestamp_sec:float):
+    return replace(self, timestamp_sec=timestamp_sec)
+
   def __repr__(self):
-    date = datetime.fromtimestamp(self.timestamp_sec)
-    pretty_time = date.strftime("%H:%M:%S.%f")
     w, h = self.image_size
 
-    return f"CameraImage({self.camera_name}, {w}x{h}, {self.image_data.shape[0]}:{str(self.image_data.dtype)}, {self.encoding.value}, {pretty_time})"
+    return f"CameraImage({self.camera_name}, {w}x{h}, {self.image_data.shape[0]}:{str(self.image_data.dtype)}, {self.encoding.value}, {self.stamp_pretty})"
 
 
 
@@ -37,16 +55,16 @@ def numpy_image(arr:np.array, device=torch.device("cpu")):
 
 @beartype
 @dataclass
-class CameraSettings:
+class CameraInfo:
   name : str
 
-  time_offset_sec:float
   serial:str
   
   image_size:Tuple[int, int]
   encoding : ImageEncoding
 
-  def __repr__(self):
-    
+  calibration : Optional[Camera] = None
+
+  def __repr__(self):    
     w, h = self.image_size
-    return f"CameraSettings({self.name}:{self.serial} {w}x{h} {self.encoding} offset={self.time_offset_sec}sec)"
+    return f"CameraInfo({self.name}:{self.serial} {w}x{h} {self.encoding})"

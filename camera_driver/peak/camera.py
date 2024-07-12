@@ -51,7 +51,7 @@ class Camera(Dispatcher):
   @property
   def serial(self) -> str:
     nodemap_tldevice = self.device.GetTLDeviceNodeMap()
-    return nodemap_tldevice.FindNode("DeviceSerialNumber").Value()
+    return str(nodemap_tldevice.FindNode("DeviceSerialNumber").Value())
   
 
   def __repr__(self):

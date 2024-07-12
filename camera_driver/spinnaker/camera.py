@@ -6,13 +6,12 @@ import PySpin
 
 from beartype import beartype
 
-from camera_driver.image.encoding import ImageEncoding
+from camera_driver.image.encoding import ImageEncoding, camera_encodings
 from .buffer import Buffer
 
 from camera_driver import camera_interface
 
 from . import helpers
-from .buffer import pyspin_encoding
 
 SettingList = List[Dict]
 Settings = Dict[str, SettingList]
@@ -54,13 +53,13 @@ class Camera(camera_interface.Camera):
   def encoding(self) -> ImageEncoding:
       pixel_format = helpers.get_value(self.nodemap, "PixelFormat")
 
-      if pixel_format not in pyspin_encoding:
+      if pixel_format not in camera_encodings:
         raise ValueError(f"Unsupported pixel format {pixel_format}")
-      return pyspin_encoding[pixel_format]
+      return camera_encodings[pixel_format]
   
   @property
   def serial(self) -> str:
-    return helpers.get_camera_serial(self.camera)
+    return str(helpers.get_camera_serial(self.camera))
   
 
   def __repr__(self):

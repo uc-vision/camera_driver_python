@@ -1,6 +1,7 @@
 import logging
 from typing import Callable, Dict
 
+from beartype import beartype
 import torch
 
 from camera_driver.camera_interface import Buffer
@@ -15,6 +16,7 @@ TimeQuery = Callable[[], float]
 class SyncHandler(Dispatcher):
   _events_ = ["on_group"]
 
+  @beartype
   def __init__(self, time_offsets:Dict[str, float], 
           sync_threshold:float, 
           sync_timeout:float, 
@@ -30,9 +32,9 @@ class SyncHandler(Dispatcher):
     self.logger = logger
     self.device = device
 
-    self.grouper = FrameGrouper(time_offsets, sync_threshold, sync_timeout)
-    self.work_queue = WorkQueue("frame_processor", self.process_image, 
-                                logger=logger, num_workers = 1, max_queue_size=self.num_cameras)
+    self.grouper = FrameGrouper(time_offsets, sync_timeout, sync_threshold)
+    self.work_queue = WorkQueue("sync_handler", self._process_image, 
+                                logger=logger, num_workers=1, max_size=self.num_cameras)
     
     self.query_time = query_time
     
@@ -40,14 +42,13 @@ class SyncHandler(Dispatcher):
 
   @property
   def num_cameras(self):
-    return len(self.grouper.num_cameras)
+    return self.grouper.num_cameras
   
 
   def push_image(self, buffer:Buffer):
     if not self.work_queue.started:
       self.work_queue.start()
-
-    self.work_queue.push(buffer)
+    self.work_queue.enqueue(buffer)
 
 
   def _process_image(self, buffer:Buffer):
@@ -55,7 +56,10 @@ class SyncHandler(Dispatcher):
     group = self.grouper.add_frame(image)
 
     if group is not None:
-      self.emit("on_group", group)
+      t = group.timestamp
+      frames = {k:frame.with_timestamp(t) for k,frame in group.frames.items()}
+
+      self.emit("on_group", frames)
 
     timed_out = self.grouper.timeout_groups(self.query_time())
     for group in timed_out:

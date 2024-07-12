@@ -54,7 +54,7 @@ class Manager(camera_interface.Manager):
         if serial in by_serial:
 
           name = by_serial[serial]
-          cameras_found[serial] = Camera(name, camera, self.logger)
+          cameras_found[name] = Camera(name, camera, self.logger)
           self.logger.info(f"Camera {name}:{serial} found.")
 
           del by_serial[serial]      

@@ -1,7 +1,11 @@
 from dataclasses import replace
-from typing import Dict, List, Optional
+from datetime import datetime
+from typing import Dict, List
 
 from camera_driver.image.camera_image import CameraImage
+
+def nearest_minute(timestamp:datetime):
+  return datetime(timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, 0)
 
 
 class FrameGroup:
@@ -12,6 +16,17 @@ class FrameGroup:
   def can_group(self, frame:CameraImage, threshold_sec:float=0.05):
     return (frame.camera_name not in self.frames 
             and abs(frame.timestamp_sec - self.timestamp) <= threshold_sec)
+
+
+  def __repr__(self):
+
+
+    times = ", ".join([f"{name}: {frame.datetime.strftime('%M%S.3f')}" for name, frame in self.frames.items()])
+    return f"FrameGroup({times})"
+
+  @property
+  def date(self):
+    return datetime.fromtimestamp(self.timestamp)
 
   @property
   def timestamp(self):
@@ -63,17 +78,21 @@ class FrameGrouper():
         group.append(frame)
         return group
       
-    group = FrameGroup(frame)
+    group = FrameGroup(frame, self.camera_set)
     self.groups.append(group)
     return group   
       
   def update_offsets(self, group:FrameGroup):
+    """
+    Update time offsets based on differences from the mean timestamp.
+    """
     for name, offset in group.time_offsets.items():
-      self.time_offsets[name] += offset
+      self.time_offsets[name] -= offset
 
 
   def timeout_groups(self, current_time:float) -> List[FrameGroup]:
-    timed_out = [current_time - group.timestamp > self.timeout_sec for group in self.groups]
+    timed_out = [group for group in self.groups
+                  if current_time - group.timestamp > self.timeout_sec]
 
     for group in timed_out:
       self.groups.remove(group)
@@ -86,10 +105,6 @@ class FrameGrouper():
     group = self.group_frame(frame)      
     if len(group) == self.num_cameras:
       self.groups.remove(group)
-
-      self.update_offsets(group)
-
-      mean_time = sum([frame.timestamp_sec for frame in group]) / self.num_cameras
-      group = [replace(frame, timestamp_sec=mean_time) for frame in group]
+      self.update_offsets(group)      
       
-    return group
+      return group
