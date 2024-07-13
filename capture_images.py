@@ -11,8 +11,8 @@ from argparse import ArgumentParser
 
 from camera_driver.concurrent.taichi_queue import TaichiQueue
 from camera_driver.concurrent.work_queue import WorkQueue
-from camera_driver.config import CameraPipelineConfig
-from camera_driver.image.image_outputs import ImageOutputs
+from camera_driver.pipeline.config import CameraPipelineConfig
+from camera_driver.pipeline import ImageOutputs
 from camera_driver.pipeline import CameraPipeline
 
 

@@ -9,11 +9,11 @@ import PySpin
 from .camera import Camera
 from . import helpers
 
-from camera_driver import camera_interface
+from camera_driver import interface
 
 
 
-class Manager(camera_interface.Manager):
+class Manager(interface.Manager):
     def __init__(self, logger:Logger):
 
       self.logger = logger

@@ -6,10 +6,10 @@ import PySpin
 
 from beartype import beartype
 
-from camera_driver.image.encoding import ImageEncoding, camera_encodings
+from camera_driver.data.encoding import ImageEncoding, camera_encodings
 from .buffer import Buffer
 
-from camera_driver import camera_interface
+from camera_driver import interface
 
 from . import helpers
 
@@ -26,7 +26,7 @@ class ImageEventHandler(PySpin.ImageEventHandler):
     self.on_image(image)
 
 
-class Camera(camera_interface.Camera):
+class Camera(interface.Camera):
 
   @beartype
   def __init__(self, name:str, camera:PySpin.CameraPtr, logger:Logger):

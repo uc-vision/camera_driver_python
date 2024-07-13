@@ -1,14 +1,8 @@
-import warnings
-
 import numpy as np
-import torch
-
-from camera_driver.image import CameraImage
 import PySpin
 
-from camera_driver.image.camera_image import numpy_image
-from camera_driver import camera_interface
-from camera_driver.image.encoding import ImageEncoding
+from camera_driver import interface
+from camera_driver.data.encoding import ImageEncoding
 
 
 pyspin_encoding = {
@@ -28,29 +22,39 @@ pyspin_encoding = {
 
 
 
-class Buffer(camera_interface.Buffer):
+class Buffer(interface.Buffer):
   def __init__(self, camera_name:str, image:PySpin.Image):
     assert not image.IsIncomplete()
 
-    self.camera_name = camera_name
+    self._camera_name = camera_name
     self._image = image
 
-  def image(self, device:torch.device) -> CameraImage:
-    image_data = self._image.GetData().view(np.uint8)
 
+  @property
+  def camera_name(self) -> str:
+    return self._camera_name
+  
+  @property
+  def image_data(self):
+    """ Note this data is invalidated when the image is released, so must be copied."""
+    return self._image.GetData().view(np.uint8)
+
+  @property
+  def image_size(self):
+    return (self._image.GetWidth(), self._image.GetHeight())
+
+  @property
+  def timestamp_sec(self):
+    return float(self._image.GetTimeStamp()) / 1e9
+
+  @property
+  def encoding(self):
     pixel_format = self._image.GetPixelFormat()
     if pixel_format not in pyspin_encoding:
       raise ValueError(f"Unsupported pixel format {pixel_format}")
       
-    return CameraImage(
-      self.camera_name,
-      image_data = numpy_image(image_data, device=device),
+    return pyspin_encoding[pixel_format]
 
-      timestamp_sec=float(self._image.GetTimeStamp()) / 1e9,
-      
-      image_size = (self._image.GetWidth(), self._image.GetHeight()),
-      encoding = pyspin_encoding[pixel_format]
-    )
 
   def release(self):
     self._image.Release()
