@@ -10,10 +10,12 @@ camera_settings:
     - BlackLevel: 0
     - BlackLevelClampingEnable: False
     - GammaEnable: False
+    - BalanceRatio: 2.0
 
-    - ChunkModeActive: True
-    - ChunkSelector: "Timestamp"
-    - ChunkEnable: True
+
+    # - ChunkModeActive: True
+    # - ChunkSelector: "Timestamp"
+    # - ChunkEnable: True
 
 
   stream:

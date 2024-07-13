@@ -8,6 +8,7 @@ from ids_peak import ids_peak
 
 from pydispatch import Dispatcher
 
+from camera_driver import interface
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
 from .buffer import Buffer
 
@@ -36,9 +37,6 @@ class Camera(Dispatcher):
     raise NotImplementedError()
   
 
-  
-    
-
   @property
   def image_size(self) -> Tuple[int, int]:
     w = self.node_value("Width").Value()
@@ -60,7 +58,6 @@ class Camera(Dispatcher):
   def __repr__(self):
     w, h = self.image_size
     return f"peak.Camera({self.name}:{self.serial} {w}x{h} {self.encoding})"
-
 
 
 
@@ -105,6 +102,10 @@ class Camera(Dispatcher):
 
   def log(self, level:int, message:str):
     self.logger.log(level, f"{self.name}:{message}")
+
+  def update_settings(self, settings:interface.CameraProperties):
+    raise NotImplementedError() # TODO
+
 
     
   def start(self):

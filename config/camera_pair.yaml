@@ -12,27 +12,27 @@ device: cuda:0
 sync_threshold_msec: 10   # threshold to consider images from the same trigger
 timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
 
+# dynamic parameters which can be changed at runtime
 
 parameters:
   # camera parameters
-  exposure: 2000
+  exposure: 50000
+  gain: 0
+  framerate: 5.0
+
+  # output parameters
+  jpeg_quality: 96
+  resize_width: 3072 
+  preview_size: 400
 
   # Tonemapping parameters
   tone_gamma: 1.0
   tone_intensity : 2.0
-
   light_adapt : 1.0
-  color_adapt : 0.0
+  color_adapt : 0.2
 
-  tone_mapping: reinhard   # linear | reinhard
-  
-  # Moving average to smooth intensity scaling over time
-  moving_average : 0.02
-
-  # image processing parameters
-  jpeg_quality: 96
-  resize_width: 3072 
-  preview_size: 200
+  tone_mapping: reinhard  # linear | reinhard
+  moving_average : 0.02   # Moving average to smooth intensity scaling over time
 
   # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
   transform: rotate_90

@@ -52,6 +52,10 @@ def get_writable(nodemap:PySpin.INodeMap, node_name:str):
     raise NodeException('Node not writable {}. '.format(node_name))
   return node
 
+
+def is_writable(nodemap:PySpin.INodeMap, node_name:str):
+  node = get_node(nodemap, node_name)
+  return PySpin.IsAvailable(node) and PySpin.IsWritable(node)
   
   
 def get_readable(nodemap:PySpin.INodeMap, node_name:str):
@@ -63,6 +67,10 @@ def get_readable(nodemap:PySpin.INodeMap, node_name:str):
   if not PySpin.IsReadable(node):
     raise NodeException('Node not readable {}. '.format(node_name))
   return node
+
+def is_readable(nodemap:PySpin.INodeMap, node_name:str):
+  node = get_node(nodemap, node_name)
+  return PySpin.IsAvailable(node) and PySpin.IsReadable(node)
 
 def get_value(nodemap:PySpin.INodeMap, node_name:str):
   node = get_readable(nodemap, node_name)

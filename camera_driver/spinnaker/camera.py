@@ -110,6 +110,19 @@ class Camera(interface.Camera):
       except Exception as e:
         self.log(logging.ERROR, f"Error handling image: {repr(e)}")
 
+
+
+  def update_properties(self, settings:interface.CameraProperties):
+    
+    if helpers.is_writable(self.nodemap, "AcquisitionFrameRate"):
+      helpers.set_float(self.nodemap, "AcquisitionFrameRate", settings.framerate)
+
+    helpers.set_float(self.nodemap, "Gain", settings.gain)
+    helpers.set_int(self.nodemap, "ExposureTime", int(settings.exposure))
+
+
+  
+
   @property
   def started(self):
     return self.handler is not None

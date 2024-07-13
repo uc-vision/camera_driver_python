@@ -2,18 +2,15 @@
 from datetime import datetime
 import logging
 from pathlib import Path
-from time import sleep
+from queue import Queue
 from typing import Dict, Tuple
 from omegaconf import OmegaConf
-
+import cv2
 
 from argparse import ArgumentParser
 
-from camera_driver.concurrent.taichi_queue import TaichiQueue
-from camera_driver.concurrent.work_queue import WorkQueue
-from camera_driver.pipeline.config import CameraPipelineConfig
-from camera_driver.pipeline import ImageOutputs
-from camera_driver.pipeline import CameraPipeline
+from camera_driver.concurrent import WorkQueue
+from camera_driver.pipeline import CameraPipeline, CameraInfo, ImageOutputs, CameraPipelineConfig
 
 
 logger = logging.getLogger(__name__)
@@ -51,7 +48,17 @@ class ImageWriter():
     self.work_queue.stop()
 
 
+def view_images(queue:Queue, camera_info:Dict[str, CameraInfo]):
+  cv2.namedWindow("image", cv2.WINDOW_NORMAL)
+  cv2.resizeWindow("image", 800, 600)
 
+  while True:
+    image_group:Dict[str, ImageOutputs] = queue.get()
+    previews = [image_group[k].preview.cpu().numpy() 
+                for k in camera_info.keys()]
+    
+    cv2.imshow("image", cv2.cvtColor(cv2.hconcat(previews), cv2.COLOR_RGB2BGR))
+    cv2.waitKey(1)
 
 
 def main():
@@ -61,6 +68,7 @@ def main():
   parser.add_argument("--settings", type=str, required=True)
 
   parser.add_argument("--write", type=str)
+  parser.add_argument("--show", action="store_true")
   args = parser.parse_args()
 
   config = CameraPipelineConfig.load_yaml(args.config)
@@ -79,16 +87,24 @@ def main():
     pipeline.bind(on_image_set=writer.write_images)
     pipeline.bind(on_stopped=writer.stop) 
 
+
+  queue = Queue()
   def on_group(group:Dict[str, ImageOutputs]):
-    print(group)
+    queue.put(group)
 
   pipeline.bind(on_image_set=on_group)
 
   try:
     pipeline.start()
 
-    while True:
-      sleep(1)
+    if args.show:
+      view_images(queue, pipeline.camera_info)
+
+    else:
+
+      while True:
+        image_group = queue.get()
+        print(image_group)  
 
 
   finally:
@@ -96,7 +112,6 @@ def main():
     pipeline.release()
 
 
-    TaichiQueue.stop()
 
 
     
