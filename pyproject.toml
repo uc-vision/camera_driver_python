@@ -1,6 +1,6 @@
 [project]
 name = "camera-driver-python"  
-version = "0.1.0"  
+version = "0.1.1"  
 description = "A simplified multi camera driver interface"  
 readme = "README.md" 
 requires-python = ">=3.10"
@@ -37,6 +37,8 @@ build-backend = "setuptools.build_meta"
 dependency_links = ["https://pypi.taichi.graphics/simple/"]
 
 [project.scripts]  # Optional
+capture_images = "camera_driver.scripts.capture_images:main"
+bench_processing = "camera_driver.scripts.bench_processing:main"
 
 [tool.setuptools.package-data]
 
