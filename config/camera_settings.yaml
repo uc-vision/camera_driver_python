@@ -1,0 +1,84 @@
+backend: spinnaker
+
+camera_serials:
+  left: 20068364 
+  right: 19423933
+
+master: right
+
+reset_cycle: True 
+device: cuda:0
+
+sync_threshold_msec: 10   # threshold to consider images from the same trigger
+timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
+
+# general parameters which can be changed at runtime
+parameters:  
+  # camera parameters
+  exposure: 50000
+  gain: 0
+  framerate: 5.0
+
+  # output parameters
+  jpeg_quality: 96
+  resize_width: 3072 
+  preview_size: 400
+
+  # Tonemapping parameters
+  tone_gamma: 1.0
+  tone_intensity : 2.0
+  light_adapt : 1.0
+  color_adapt : 0.2
+
+  tone_mapping: reinhard  # linear | reinhard
+  moving_average : 0.02   # Moving average to smooth intensity scaling over time
+
+  # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
+  transform: rotate_90
+
+# camera specific settings which are set at startup depending on mode
+camera_settings:
+  device:
+    # - UserSetSelector: Default
+    - PixelFormat: BayerRG12p
+
+    # Turn all the auto off
+    - ExposureAuto: "Off"
+    - GainAuto: "Off"
+    - BalanceWhiteAuto: "Off"
+    - BlackLevel: 0
+    - BlackLevelClampingEnable: False
+    - GammaEnable: False
+    - BalanceRatio: 2.0
+
+
+    # - ChunkModeActive: True
+    # - ChunkSelector: "Timestamp"
+    # - ChunkEnable: True
+
+
+  stream:
+    - StreamBufferCountMode: Manual
+    - StreamBufferCountManual: 2
+    - StreamBufferHandlingMode: OldestFirst
+
+
+  slave:
+    - LineSelector: Line3
+    - TriggerSource: Line3
+    - TriggerSelector: FrameStart
+    - LineMode: Input
+    - TriggerOverlap: ReadOut
+    - TriggerActivation: RisingEdge
+    - TriggerMode: "On"  # not a boolean, but an enum On or Off
+ 
+  
+  master:
+    - LineSelector: Line2
+    - LineMode: Output
+    - TriggerSource: Software
+
+    - AcquisitionFrameRateEnable: True
+    - AcquisitionFrameRate: 5.0
+
+    
