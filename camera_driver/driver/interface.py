@@ -9,7 +9,7 @@ from beartype import beartype
 import numpy as np
 
 from pydispatch import Dispatcher
-from .data.encoding import ImageEncoding
+from ..data.encoding import ImageEncoding
 
 
 from dataclasses import dataclass
@@ -124,23 +124,19 @@ class BackendType(Enum):
   peak = "peak"
   spinnaker = "spinnaker"
 
+  def create(self, logger:logging.Logger) -> Manager:
+    match self:
+      case BackendType.peak:
 
-@beartype
-def create_manager(backend:BackendType, logger:logging.Logger):
-  if backend is BackendType.spinnaker:
-    if importlib.util.find_spec("PySpin") is None:      
-      raise ImportError("Please install the Spinnaker SDK and PySpin python package.")
+        if importlib.util.find_spec("ids_peak") is None:
+          raise ImportError("Please install the IDS Peak SDK and ids_peak python package.")
 
-    from camera_driver import spinnaker
-    return spinnaker.Manager(logger)
-  elif backend is BackendType.peak:
+        from camera_driver import peak
+        return peak.Manager(logger)
 
-    if importlib.util.find_spec("ids_peak") is None:
-      raise ImportError("Please install the IDS Peak SDK and ids_peak python package.")
+      case BackendType.spinnaker:
+        if importlib.util.find_spec("PySpin") is None:      
+          raise ImportError("Please install the Spinnaker SDK and PySpin python package.")
 
-    from camera_driver import peak
-    return peak.Manager(logger)
-
-  else:
-    raise ValueError(f"Unknown backend: {backend}")
-
+        from camera_driver import spinnaker
+        return spinnaker.Manager(logger)

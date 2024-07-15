@@ -9,7 +9,7 @@ from beartype import beartype
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
 from .buffer import Buffer
 
-from camera_driver import interface
+from camera_driver.driver import interface
 
 from . import helpers
 

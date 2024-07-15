@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 from beartype import beartype
 
-from camera_driver.interface import BackendType, CameraProperties
+from camera_driver.driver.interface import BackendType, CameraProperties
 from omegaconf import OmegaConf
 
 class Transform(Enum):
@@ -73,13 +73,11 @@ class ImageSettings:
     self.jpeg_quality = int(clamp(self.jpeg_quality, 1, 100))
 
 
-
-
 @beartype
 @dataclass 
 class CameraPipelineConfig:
   backend:BackendType
-  cameras:Dict[str, str]
+  camera_serials:Dict[str, str]
 
   master:Optional[str]
   reset_cycle:bool
@@ -87,11 +85,14 @@ class CameraPipelineConfig:
   timeout_msec:float
 
   device:str
+
   parameters: ImageSettings
+  camera_settings: Dict[str, List]
 
   @staticmethod
   def load_yaml(filename) -> 'CameraPipelineConfig':
     return load_structured(filename, CameraPipelineConfig)
+
 
 
 def load_structured(file, structure):

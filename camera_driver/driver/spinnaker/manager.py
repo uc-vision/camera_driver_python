@@ -9,7 +9,7 @@ import PySpin
 from .camera import Camera
 from . import helpers
 
-from camera_driver import interface
+from camera_driver.driver import interface
 
 
 

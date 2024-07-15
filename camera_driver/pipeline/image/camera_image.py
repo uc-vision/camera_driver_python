@@ -9,7 +9,7 @@ import torch
 from camera_driver.data import ImageEncoding, Timestamped
 from camera_geometry import Camera
 
-from camera_driver.interface import Buffer
+from camera_driver.driver.interface import Buffer
 
 
 

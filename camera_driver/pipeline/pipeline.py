@@ -8,7 +8,7 @@ from pydispatch import Dispatcher
 
 from camera_driver.camera_group.camera_set import CameraSet
 from camera_driver.camera_group.sync_handler import SyncHandler, TimeQuery
-from camera_driver.interface import Buffer, Camera, create_manager
+from camera_driver.driver.interface import Buffer, Camera
 
 from .config import CameraPipelineConfig, ImageSettings
 from .image.camera_image import CameraImage, CameraInfo
@@ -19,12 +19,12 @@ from camera_driver.concurrent.taichi_queue import TaichiQueue
 
 
 @beartype
-def cameras_from_config(config:CameraPipelineConfig, camera_settings:Dict[str, Dict], logger:logging.Logger):
+def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
 
-  manager = create_manager(config.backend, logger)
+  manager = config.backend.create(logger)
   logger.info(f"Found cameras {manager.camera_serials()}")
 
-  cameras_required = set(config.cameras.values())
+  cameras_required = set(config.camera_serials.values())
   if cameras_required > manager.camera_serials():
     raise ValueError(f"Camera(s) not found: {cameras_required - manager.camera_serials()}")
 
@@ -37,7 +37,7 @@ def cameras_from_config(config:CameraPipelineConfig, camera_settings:Dict[str, D
             for name, serial in config.cameras.items()}
   
   for camera in cameras.values():
-    camera.load_config(camera_settings["camera_settings"], 
+    camera.load_config(config.camera_settings, 
                       "master" if camera.name == config.master else "slave")
     
   return cameras, manager

@@ -3,7 +3,7 @@ from typing import Callable, Dict
 
 from beartype import beartype
 
-from camera_driver.interface import Buffer
+from camera_driver.driver.interface import Buffer
 from camera_driver.data import Timestamped
 from camera_driver.concurrent.work_queue import WorkQueue
 from pydispatch import Dispatcher

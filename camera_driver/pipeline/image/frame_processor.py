@@ -81,16 +81,18 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def process_image_set(self, images:Dict[str, CameraImage]):
+    assert set(images.keys()) == set(self.cameras.keys()
+      ), f"Expected {set(self.cameras.keys())} - got {set(images.keys())}"
+    
     return self.queue.enqueue(images)
 
 
-  def _check_image(self, k, image:torch.Tensor):
-    assert image.dtype == torch.uint8, f"{k}:expected uint8 buffer - got {image.dtype}"
-    assert image.device == self.device, f"{k}expected device {self.device} - got {image.device}"
+  def _check_image(self, k:str, image:torch.Tensor):
+    assert image.dtype == torch.uint8, f"{k}: expected uint8 buffer - got {image.dtype}"
 
     w, h = self.cameras[k].image_size
+    return image.view(h, -1).to(self.device, non_blocking=True)
 
-    return image.view(h, -1)
   
 
   @beartype

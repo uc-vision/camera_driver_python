@@ -1,7 +1,7 @@
 import numpy as np
 import PySpin
 
-from camera_driver import interface
+from camera_driver.driver import interface
 from camera_driver.data.encoding import ImageEncoding
 
 

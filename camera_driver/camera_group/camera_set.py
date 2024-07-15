@@ -6,7 +6,7 @@ from beartype import beartype
 
 from .sync_handler import TimeQuery
 
-from camera_driver.interface  import Buffer, Camera, CameraProperties
+from camera_driver.driver.interface  import Buffer, Camera, CameraProperties
 from pydispatch import Dispatcher
 
 

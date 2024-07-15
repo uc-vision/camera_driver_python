@@ -65,7 +65,6 @@ def main():
 
   parser = ArgumentParser()
   parser.add_argument("--config", type=str, required=True)
-  parser.add_argument("--settings", type=str, required=True)
 
   parser.add_argument("--write", type=str)
   parser.add_argument("--show", action="store_true")

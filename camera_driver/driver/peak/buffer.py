@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
-from camera_driver import interface
+from camera_driver.driver import interface
 
 
 from ids_peak import ids_peak
