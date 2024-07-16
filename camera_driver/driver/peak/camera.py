@@ -3,7 +3,7 @@ from ast import Tuple
 from logging import Logger
 import logging
 from threading import Thread
-from typing import  Callable, Optional
+from beartype.typing import  Callable, Optional
 from ids_peak import ids_peak
 
 from pydispatch import Dispatcher

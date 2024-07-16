@@ -1,6 +1,6 @@
 
 from enum import Enum
-from typing import Callable, Set, Tuple
+from beartype.typing import Callable, Set, Tuple, Dict
 import abc
 import importlib
 import logging
@@ -9,7 +9,7 @@ from beartype import beartype
 import numpy as np
 
 from pydispatch import Dispatcher
-from ..data.encoding import ImageEncoding
+from camera_driver.data.encoding import ImageEncoding
 
 
 from dataclasses import dataclass
@@ -105,22 +105,28 @@ class Manager(metaclass=abc.ABCMeta):
 
   @abc.abstractmethod
   def camera_serials(self) -> Set[str]:
-    pass
+    raise NotImplementedError()
 
   @abc.abstractmethod
   def reset_cameras(self, camera_set:Set[str]):
-    pass
+    raise NotImplementedError()
+
+  @abc.abstractmethod
+  def wait_for_cameras(self, camera_set:Set[str]) -> Dict[str, Camera]:
+    raise NotImplementedError()
 
   @abc.abstractmethod
   def init_camera(self, camera_name:str, serial:str) -> Camera:
-    pass
+    raise NotImplementedError()
 
   @abc.abstractmethod
   def release(self):
-    pass
+    raise NotImplementedError()
 
 
 class BackendType(Enum):
+
+
   peak = "peak"
   spinnaker = "spinnaker"
 
@@ -131,12 +137,12 @@ class BackendType(Enum):
         if importlib.util.find_spec("ids_peak") is None:
           raise ImportError("Please install the IDS Peak SDK and ids_peak python package.")
 
-        from camera_driver import peak
+        from camera_driver.driver import peak
         return peak.Manager(logger)
 
       case BackendType.spinnaker:
         if importlib.util.find_spec("PySpin") is None:      
           raise ImportError("Please install the Spinnaker SDK and PySpin python package.")
 
-        from camera_driver import spinnaker
+        from camera_driver.driver import spinnaker
         return spinnaker.Manager(logger)

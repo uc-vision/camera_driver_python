@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import  Optional, Tuple
+from beartype.typing import  Optional, Tuple
 import warnings
 from beartype import beartype
 
@@ -30,12 +30,13 @@ class CameraImage(Timestamped):
     return f"CameraImage({self.camera_name}, {w}x{h}, {str(self.image_data.dtype)}, {self.encoding.value}, {self.stamp_pretty})"
 
   @staticmethod
-  def from_buffer(buffer:Buffer, device:torch.device):
+  def from_buffer(buffer:Buffer, clock_time_sec:float, device:torch.device):
     """ Convert buffer to CameraImage
         Image is copied to torch Tensor and uploaded to device """
 
     torch_image = numpy_torch(buffer.image_data, device)
     return CameraImage(timestamp_sec=buffer.timestamp_sec,
+                      clock_time_sec=clock_time_sec,
                       camera_name=buffer.camera_name,
                       image_data = torch_image,
                       image_size=buffer.image_size,

@@ -1,6 +1,6 @@
 from dataclasses import replace
 import logging
-from typing import Dict
+from beartype.typing import Dict
 
 import torch
 from beartype import beartype
@@ -30,11 +30,11 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
 
   if config.reset_cycle is True:
     manager.reset_cameras(manager.camera_serials())
-    cameras = manager.wait_for_cameras(config.cameras)
+    cameras = manager.wait_for_cameras(config.camera_serials)
 
   else:
     cameras = {name:manager.init_camera(name, serial)
-            for name, serial in config.cameras.items()}
+            for name, serial in config.camera_serials.items()}
   
   for camera in cameras.values():
     camera.load_config(config.camera_settings, 
@@ -56,14 +56,13 @@ class CameraPipeline(Dispatcher):
 
   @beartype
   def __init__(self, config:CameraPipelineConfig, 
-               camera_settings:Dict[str, Dict], 
                logger:logging.Logger, 
                query_time:TimeQuery):
     
     self.config = config
     self.query_time = query_time
 
-    cameras, manager = cameras_from_config(config, camera_settings, logger)
+    cameras, manager = cameras_from_config(config, logger)
     self.camera_set = CameraSet(cameras, logger, master=config.master)
 
     self.camera_set.update_properties(
@@ -85,7 +84,8 @@ class CameraPipeline(Dispatcher):
     self.emit("on_image_set", group)
   
   def _process_buffer(self, buffer:Buffer):
-    return CameraImage.from_buffer(buffer, self.processor.device)
+    now = self.query_time()
+    return CameraImage.from_buffer(buffer, now, self.processor.device)
 
 
   def update_settings(self, image_settings:ImageSettings):
@@ -122,11 +122,15 @@ class CameraPipeline(Dispatcher):
     assert self.is_started, "Camera pipeline not started"
     self.logger.info("Stopping camera pipeline")
 
-    self.processor.stop()
+    self.camera_set.unbind()
 
-    self.camera_set.release()
+
     self.sync_handler.flush()
     self.sync_handler = None
+
+    self.processor.stop()
+    self.camera_set.release()
+
 
     self.emit("on_stopped")
     self.logger.info("Stopped camera pipeline")

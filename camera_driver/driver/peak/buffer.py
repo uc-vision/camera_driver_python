@@ -1,4 +1,4 @@
-from typing import Tuple
+from beartype.typing import Tuple
 
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
 from camera_driver.driver import interface

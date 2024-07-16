@@ -1,7 +1,7 @@
 
 from logging import Logger
 import logging
-from typing import  Callable, Dict, List
+from beartype.typing import  Callable, Dict, List
 import PySpin
 
 from beartype import beartype

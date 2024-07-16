@@ -1,6 +1,6 @@
 from functools import cache
 import logging
-from typing import Dict, Optional
+from beartype.typing import Dict, Optional
 
 from beartype import beartype
 
@@ -53,6 +53,11 @@ class CameraSet(Dispatcher):
       camera.start()
 
     self.is_started = True
+
+  def unbind(self):
+    for k, camera in self.cameras.items():
+      camera.unbind(self.on_buffer)
+
 
   def stop(self):
     assert self.is_started, "CameraSet not started"

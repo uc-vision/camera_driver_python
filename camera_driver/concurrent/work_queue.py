@@ -1,7 +1,7 @@
 from __future__ import annotations
 from logging import Logger
 import traceback
-from typing import Callable, Any, List, Optional
+from beartype.typing import Callable, Any, List, Optional
 
 from queue import Queue
 from threading import Thread

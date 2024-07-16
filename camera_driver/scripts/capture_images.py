@@ -3,7 +3,7 @@ from datetime import datetime
 import logging
 from pathlib import Path
 from queue import Queue
-from typing import Dict, Tuple
+from beartype.typing import Dict, Tuple
 from omegaconf import OmegaConf
 import cv2
 
@@ -64,21 +64,20 @@ def view_images(queue:Queue, camera_info:Dict[str, CameraInfo]):
 def main():
 
   parser = ArgumentParser()
-  parser.add_argument("--config", type=str, required=True)
+  parser.add_argument("--config", nargs='+', type=str, required=True)
 
   parser.add_argument("--write", type=str)
   parser.add_argument("--show", action="store_true")
   args = parser.parse_args()
 
-  config = CameraPipelineConfig.load_yaml(args.config)
+  config = CameraPipelineConfig.load_yaml(*args.config)
   logger.info(OmegaConf.to_yaml(config))
 
-  camera_settings = OmegaConf.to_container(OmegaConf.load(args.settings))
 
   def get_timestamp():
     return datetime.now().timestamp()
   
-  pipeline = CameraPipeline(config, camera_settings, logger, query_time=get_timestamp)
+  pipeline = CameraPipeline(config, logger, query_time=get_timestamp)
 
   if args.write:
     writer = ImageWriter(args.write, num_cameras=len(config.cameras))

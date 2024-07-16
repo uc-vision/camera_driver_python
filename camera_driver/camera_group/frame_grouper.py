@@ -1,6 +1,6 @@
 from dataclasses import replace
 from datetime import datetime
-from typing import Dict, List, Optional
+from beartype.typing import Dict, List, Optional
 
 from camera_driver.data import Timestamped
 

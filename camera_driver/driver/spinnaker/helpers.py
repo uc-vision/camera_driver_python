@@ -1,6 +1,6 @@
 
 from numbers import Number
-from typing import Any, Callable, Dict,  Tuple
+from beartype.typing import Any, Callable, Dict,  Tuple
 import PySpin
 import statistics
 from beartype import beartype
@@ -177,14 +177,12 @@ def reset_camera(camera:PySpin.CameraPtr):
     camera.Init()
     nodemap = camera.GetNodeMap()
     execute(nodemap, "DeviceReset")  
-    camera.DeInit()
+
 
 def load_defaults(camera: PySpin.Camera):
     nodemap = camera.GetNodeMap()
-
     set_enum(nodemap, "UserSetSelector", "Default")
     execute(nodemap, "UserSetLoad")
-
 
 
 def trigger(camera: PySpin.Camera):

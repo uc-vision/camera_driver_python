@@ -1,6 +1,6 @@
 
 from logging import Logger
-from typing import Set
+from beartype.typing import Set
 
 from ids_peak import ids_peak
 from .camera import Camera

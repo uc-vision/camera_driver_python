@@ -1,6 +1,6 @@
 
 from logging import Logger
-from typing import Dict, List, Tuple
+from beartype.typing import Dict, List, Tuple
 import torch
 
 from pydispatch import Dispatcher

@@ -1,7 +1,7 @@
 
 from logging import Logger
 from time import sleep
-from typing import Dict, List, Set
+from beartype.typing import Dict, List, Set
 
 from queue import Queue
 
@@ -23,7 +23,7 @@ class Manager(interface.Manager):
   
     def _devices(self) -> Dict[str, PySpin.CameraPtr]:
       camera_list = self.system.GetCameras()
-      return {helpers.get_camera_serial(camera): camera for camera in camera_list}
+      return {str(helpers.get_camera_serial(camera)): camera for camera in camera_list}
 
 
     def camera_serials(self) -> Set[str]:
@@ -40,6 +40,8 @@ class Manager(interface.Manager):
       handler = ResetHandler(on_added=queue.put)
 
       interfaces = self.system.GetInterfaces()    
+      print(interfaces)
+
       for iface in interfaces:
         iface.RegisterEventHandler(handler)
 
@@ -71,7 +73,8 @@ class Manager(interface.Manager):
       cameras = self._devices()
       self.logger.info(f"Resetting {len(cameras)} cameras...")
 
-      for camera in cameras.values():
+      for k, camera in cameras.items():
+        self.logger.info(f"Resetting {k}")
         helpers.reset_camera(camera)
       
       self.logger.info("Done.")

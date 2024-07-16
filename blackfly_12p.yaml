@@ -1,12 +1,16 @@
 backend: spinnaker
 
 camera_serials:
-  left: 20068364 
-  right: 19423933
+  cam1: 22083908 # TOP 
+  cam2: 22083922 # SECOND FROM TOP
+  cam3: 22083907 # MIDDLE TOP
+  cam4: 22083916 # MIDDLE BOT 
+  cam5: 22083921 # SECOND FROM BOTTOM 
+  cam6: 22083915 # BOTTOM
 
-master: right
+master: cam6
 
-reset_cycle: True 
+reset_cycle: True
 device: cuda:0
 
 sync_threshold_msec: 10   # threshold to consider images from the same trigger
@@ -17,7 +21,7 @@ parameters:
   # camera parameters
   exposure: 50000
   gain: 0
-  framerate: 5.0
+  framerate: 10.0
 
   # output parameters
   jpeg_quality: 96
@@ -36,7 +40,7 @@ parameters:
   # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
   transform: rotate_90
 
-# camera specific settings which are set at startup depending on mode
+
 camera_settings:
   device:
     # - UserSetSelector: Default
@@ -79,6 +83,6 @@ camera_settings:
     - TriggerSource: Software
 
     - AcquisitionFrameRateEnable: True
-    - AcquisitionFrameRate: 5.0
+    - AcquisitionFrameRate: 10.0
 
     

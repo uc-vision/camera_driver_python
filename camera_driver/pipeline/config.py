@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Dict, Optional, List
+from beartype.typing import Dict, Optional, List
 from beartype import beartype
 
 from camera_driver.driver.interface import BackendType, CameraProperties
@@ -90,17 +90,18 @@ class CameraPipelineConfig:
   camera_settings: Dict[str, List]
 
   @staticmethod
-  def load_yaml(filename) -> 'CameraPipelineConfig':
-    return load_structured(filename, CameraPipelineConfig)
+  def load_yaml(*filenames:str) -> 'CameraPipelineConfig':
+    return load_structured(CameraPipelineConfig, *filenames)
 
 
 
-def load_structured(file, structure):
-   conf = OmegaConf.load(file)
-   merged = OmegaConf.merge(OmegaConf.structured(structure), conf)
+def load_structured(structure, *files:str):
+   config = OmegaConf.structured(structure)
 
-   obj = OmegaConf.to_object(merged)
-   return obj
+   for file in files:
+     config = OmegaConf.merge(config, OmegaConf.load(file))
+
+   return OmegaConf.to_object(config)
 
 
 def load_yaml(file):

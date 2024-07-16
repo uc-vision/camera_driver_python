@@ -8,6 +8,8 @@ from datetime import datetime
 class Timestamped:
 
   timestamp_sec: float
+  clock_time_sec: float
+  
   camera_name: str
 
   @property
