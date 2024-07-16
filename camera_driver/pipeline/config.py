@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from beartype.typing import Dict, Optional, List
 from beartype import beartype
@@ -18,8 +18,8 @@ class Transform(Enum):
 
   
 class ToneMapper(Enum):
-  linear = 1
-  reinhard = 2
+  linear = 0
+  reinhard = 1
 
 
 def clamp(x, lower, upper):
@@ -30,29 +30,29 @@ def clamp(x, lower, upper):
 class ImageSettings:
 
   # Camera parameters
-  exposure: int = 2000
-  gain: float = 1.0
-  framerate: float = 10.
+  exposure: int = field(default=2000, metadata=dict(description="Exposure", min=100, max=20000, step=100))
+  gain: float = field(default=1.0, metadata=dict(description="Gain", min=0.0, max=27.0))
+  framerate: float = field(default=10.0, metadata=dict(description="Framerate", min=1.6, max=23.0))
 
   # output parameters
-  resize_width: int = 0
-  preview_size : int = 200
-  jpeg_quality : int = 94
+  resize_width: int = field(default=0, metadata=dict(description="Resize width", min=0, max=4096))
+  preview_size : int = field(default=200, metadata=dict(description="Preview width", min=64, max=1024))
+  jpeg_quality : int = field(default=94, metadata=dict(description="JPEG quality", min=1, max=100))
 
   # Tonemapping parameters
-  tone_gamma: float = 1.0
-  tone_intensity : float = 1.0
-  light_adapt : float = 1.0
-  color_adapt : float = 1.0
+  tone_gamma: float = field(default=1.0, metadata=dict(description="Gamma", min=0.1, max=5.0))
+  tone_intensity : float = field(default=1.0, metadata=dict(description="Intensity", min=0.1, max=5.0))
+  light_adapt : float = field(default=1.0, metadata=dict(description="Light adaptation", min=0.0, max=1.0))
+  color_adapt : float = field(default=1.0, metadata=dict(description="Color adaptation", min=0.0, max=1.0))
 
   # Moving average to smooth intensity scaling over time
-  moving_average : float = 0.02
+  moving_average : float = field(default=0.02, metadata=dict(description="Tonemap moving average", min=0.0, max=1.0))
 
   # linear or reinhard
-  tone_mapping: ToneMapper = ToneMapper.reinhard   
+  tone_mapping: ToneMapper = field(default=ToneMapper.reinhard, metadata=dict(description="Tonemapping algorithm"))
 
   # none rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
-  transform : Transform = Transform.none
+  transform : Transform = field(default=Transform.none, metadata=dict(description="Image transform"))
   
   @property
   def camera_properties(self):
