@@ -18,8 +18,6 @@ class Manager(interface.Manager):
 
       self.logger = logger
       self.system = PySpin.System.GetInstance()
-      
-      
   
     def _devices(self) -> Dict[str, PySpin.CameraPtr]:
       camera_list = self.system.GetCameras()
@@ -40,7 +38,6 @@ class Manager(interface.Manager):
       handler = ResetHandler(on_added=queue.put)
 
       interfaces = self.system.GetInterfaces()    
-      print(interfaces)
 
       for iface in interfaces:
         iface.RegisterEventHandler(handler)
@@ -49,7 +46,7 @@ class Manager(interface.Manager):
       cameras_found = {}
 
       while len(by_serial) > 0:
-        self.logger.debug(f"Waiting for cameras {by_serial}")
+        self.logger.info(f"Waiting for cameras {by_serial}")
 
         camera = queue.get()
         serial = str(helpers.get_camera_serial(camera))

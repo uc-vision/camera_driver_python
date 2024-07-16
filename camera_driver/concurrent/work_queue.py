@@ -43,18 +43,27 @@ class WorkQueue():
     return [worker.ident for worker in self.workers]
   
   def stop(self) -> None:
-    self.logger.info(f"Stopping WorkQueue {self.name}, ({self.num_workers} threads)")
-    
-    for worker in self.workers:
-      self.queue.put(None)
-    
-    for worker in self.workers:
-      worker.join()
+    if self.workers is not None:
+      self.logger.info(f"Stopping WorkQueue {self.name}, ({self.num_workers} threads)")
+      
+      for worker in self.workers:
+        self.queue.put(None)
+      
+      for worker in self.workers:
+        worker.join()
+      
+      self.workers = None
+
+      
     self.logger.info(f"Workqueue done {self.name}")
   
   def start(self) -> None:
     assert self.workers is None
-    self.workers = [Thread(target=self.run_worker) for _ in range(self.num_workers)]
+    self.workers = [Thread(target=self.run_worker, name=f"{self.name}_{i}") 
+                    for i in range(self.num_workers)]
+    
     for worker in self.workers:
       worker.start()
+
+    self.logger.info(f"WorkQueue {self.name} started ({self.num_workers} threads)")
   

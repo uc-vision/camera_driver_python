@@ -123,15 +123,10 @@ class CameraPipeline(Dispatcher):
     self.logger.info("Stopping camera pipeline")
 
     self.camera_set.unbind()
-
-
     self.sync_handler.flush()
     self.sync_handler = None
 
-    self.processor.stop()
     self.camera_set.release()
-
-
     self.emit("on_stopped")
     self.logger.info("Stopped camera pipeline")
 
@@ -140,5 +135,6 @@ class CameraPipeline(Dispatcher):
     if self.is_started:
       self.stop()
 
+    self.processor.stop()
     self.manager.release()
     TaichiQueue.stop()

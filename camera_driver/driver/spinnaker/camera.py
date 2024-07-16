@@ -88,7 +88,7 @@ class Camera(interface.Camera):
   def _set_settings(self, nodemap, config:Dict[str, Dict]):
     for setting in config:
         setting_name, value = helpers.dict_item(setting)
-        self.log(logging.INFO, f"Setting {setting_name} to {value}")
+        self.log(logging.DEBUG, f"Setting {setting_name} to {value}")
 
         try:
           helpers.set_value(nodemap, setting_name, value)

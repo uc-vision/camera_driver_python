@@ -10,7 +10,7 @@ class TaichiQueue():
   @classmethod
   def queue(cls) -> ThreadPoolExecutor:
     if cls.executor is None:
-      cls.executor = ThreadPoolExecutor(max_workers=1, 
+      cls.executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="taichi",
         initializer=partial(ti.init, arch=ti.gpu, device_memory_GB=1.0, offline_cache=True))
     return cls.executor
   
@@ -34,3 +34,4 @@ class TaichiQueue():
       cls.run_sync(ti.reset)
       executor.shutdown(wait=True)
       TaichiQueue.executor = None
+

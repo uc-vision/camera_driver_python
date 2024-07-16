@@ -1,14 +1,20 @@
 backend: spinnaker
 
-camera_serials:
-  cam1: 22083908 # TOP 
-  cam2: 22083922 # SECOND FROM TOP
-  cam3: 22083907 # MIDDLE TOP
-  cam4: 22083916 # MIDDLE BOT 
-  cam5: 22083921 # SECOND FROM BOTTOM 
-  cam6: 22083915 # BOTTOM
+# camera_serials:
+#   cam1: 22083908 # TOP 
+#   cam2: 22083922 # SECOND FROM TOP
+#   cam3: 22083907 # MIDDLE TOP
+#   cam4: 22083916 # MIDDLE BOT 
+#   cam5: 22083921 # SECOND FROM BOTTOM 
+#   cam6: 22083915 # BOTTOM
 
-master: cam6
+# master: cam6
+
+camera_serials: 
+  left: 20068364
+  right: 19423933
+
+master: right
 
 reset_cycle: True
 device: cuda:0
