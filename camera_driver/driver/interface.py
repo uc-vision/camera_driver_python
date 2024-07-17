@@ -1,5 +1,6 @@
 
 from enum import Enum
+from typing import List
 from beartype.typing import Callable, Set, Tuple, Dict
 import abc
 import importlib
@@ -21,6 +22,9 @@ class CameraProperties:
   exposure: int
   gain: float
   framerate: float
+
+SettingList = List[Dict]
+
 
   
 class Buffer(metaclass=abc.ABCMeta):
@@ -61,9 +65,9 @@ class Camera(Dispatcher, metaclass=abc.ABCMeta):
   _events_ = ["on_started", "on_buffer"]
 
   @abc.abstractmethod
-  def load_config(self, config:dict, mode:str="slave"):
+  def setup_mode(self, mode:str):
     raise NotImplementedError()
-
+  
 
 
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
@@ -130,7 +134,7 @@ class BackendType(Enum):
   peak = "peak"
   spinnaker = "spinnaker"
 
-  def create(self, logger:logging.Logger) -> Manager:
+  def create(self, presets:Dict[SettingList], logger:logging.Logger) -> Manager:
     match self:
       case BackendType.peak:
 
@@ -138,11 +142,11 @@ class BackendType(Enum):
           raise ImportError("Please install the IDS Peak SDK and ids_peak python package.")
 
         from camera_driver.driver import peak
-        return peak.Manager(logger)
+        return peak.Manager(presets, logger)
 
       case BackendType.spinnaker:
         if importlib.util.find_spec("PySpin") is None:      
           raise ImportError("Please install the Spinnaker SDK and PySpin python package.")
 
         from camera_driver.driver import spinnaker
-        return spinnaker.Manager(logger)
+        return spinnaker.Manager(presets, logger)

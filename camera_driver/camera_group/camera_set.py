@@ -54,9 +54,10 @@ class CameraSet(Dispatcher):
 
     self.is_started = True
 
-  def unbind(self):
+  def unbind_cameras(self):
     for k, camera in self.cameras.items():
       camera.unbind(self.on_buffer)
+
 
 
   def stop(self):

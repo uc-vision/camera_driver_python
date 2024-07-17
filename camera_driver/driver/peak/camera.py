@@ -1,9 +1,9 @@
 
-from ast import Tuple
 from logging import Logger
 import logging
 from threading import Thread
-from beartype.typing import  Callable, Optional
+from typing import Dict, List
+from beartype.typing import  Callable, Optional, Tuple
 from ids_peak import ids_peak
 
 from pydispatch import Dispatcher
@@ -12,35 +12,38 @@ from camera_driver.driver import interface
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
 from .buffer import Buffer
 
+
+
+
 class Camera(Dispatcher):
   _events_ = ["on_started", "on_buffer"]
 
-  def __init__(self, name:str, device:ids_peak.Device, logger:Logger):
+  def __init__(self, name:str, device:ids_peak.Device, presets:Dict[interface.SettingList], logger:Logger):
     self.device = device
 
     self.nodemap = device.RemoteDevice().NodeMaps()[0]
     self.data_stream = device.DataStreams()[0].OpenDataStream()
     self.logger = logger
 
-    pixel_format = self.nodemap.FindNode("PixelFormat")
-    pixel_format.SetCurrentEntry(pixel_format.FindEntry("BayerRG12g24IDS"))
-
-    self.nodemap.FindNode("AcquisitionFrameRateTarget").SetValue(15.0)
 
     self.capture_thread:Optional[Thread] = None
     self.started = False
 
     self.name = name
+    self.presets = presets
 
 
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
     raise NotImplementedError()
   
+  def setup_mode(self, mode:str):
+    raise NotImplementedError()
+
 
   @property
   def image_size(self) -> Tuple[int, int]:
-    w = self.node_value("Width").Value()
-    h = self.node_value("Height").Value()
+    w = self.node_value("Width")
+    h = self.node_value("Height")
     return w, h
 
   
@@ -51,9 +54,7 @@ class Camera(Dispatcher):
     
   @property
   def serial(self) -> str:
-    nodemap_tldevice = self.device.GetTLDeviceNodeMap()
-    return str(nodemap_tldevice.FindNode("DeviceSerialNumber").Value())
-  
+    return self.node_value("DeviceSerialNumber")  
 
   def __repr__(self):
     w, h = self.image_size
@@ -68,10 +69,8 @@ class Camera(Dispatcher):
     buffer_count_max = self.data_stream.NumBuffersAnnouncedMinRequired()
 
     for _ in range(buffer_count_max):
-        # Let the TL allocate the buffers
-        buffer = self.data_stream.AllocAndAnnounceBuffer(payload_size)
-            # Put the buffer in the pool
-        self.data_stream.QueueBuffer(buffer)
+      buffer = self.data_stream.AllocAndAnnounceBuffer(payload_size)
+      self.data_stream.QueueBuffer(buffer)
 
   def _flush_buffers(self):
     self.log(logging.DEBUG, "Flushing buffers...")
@@ -86,8 +85,12 @@ class Camera(Dispatcher):
      node.WaitUntilDone()
 
   def node_value(self, node_name:str):
-    return self.nodemap.FindNode(node_name).Value()
+    node = self.nodemap.FindNode(node_name)
     
+    if node.Type() == ids_peak.NodeType_Enumeration:
+      return node.CurrentEntry().DisplayName()
+    else:
+      return node.Value()
 
   def _capture_thread(self):
     while self.started:

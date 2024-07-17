@@ -51,8 +51,7 @@ class ImageOutputs(object):
       
 
   @cached_property
-  def compressed(self) -> bytes:
-    
+  def compressed(self) -> bytes:    
     return self.encode(self.rgb)
 
   @cached_property

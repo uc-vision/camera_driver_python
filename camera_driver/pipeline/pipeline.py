@@ -21,7 +21,7 @@ from camera_driver.concurrent.taichi_queue import TaichiQueue
 @beartype
 def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
 
-  manager = config.backend.create(logger)
+  manager = config.backend.create(config.camera_settings, logger)
   logger.info(f"Found cameras {manager.camera_serials()}")
 
   cameras_required = set(config.camera_serials.values())
@@ -35,10 +35,7 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
   else:
     cameras = {name:manager.init_camera(name, serial)
             for name, serial in config.camera_serials.items()}
-  
-  for camera in cameras.values():
-    camera.load_config(config.camera_settings, 
-                      "master" if camera.name == config.master else "slave")
+
     
   return cameras, manager
 
@@ -97,8 +94,17 @@ class CameraPipeline(Dispatcher):
 
 
   def start(self):
+    if self.is_started:
+      self.logger.info("Camera pipeline already started")
+      return 
+
     self.logger.info("Starting camera pipeline")
     timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
+
+    for k, camera in self.camera_set.cameras.items():
+      camera.setup_mode("master" if k == self.config.master else "slave")
+
+
     self.sync_handler = SyncHandler(time_offsets=timestamp_offsets,
                                     sync_threshold=self.config.sync_threshold_msec / 1000.,
                                     sync_timeout=self.config.timeout_msec / 1000.,
@@ -119,21 +125,25 @@ class CameraPipeline(Dispatcher):
     return self.camera_set.is_started
 
   def stop(self):
-    assert self.is_started, "Camera pipeline not started"
+    if not self.is_started:
+      self.logger.info("Camera pipeline already stopped")
+      return 
+      
     self.logger.info("Stopping camera pipeline")
 
-    self.camera_set.unbind()
+    self.camera_set.unbind_cameras()
+    self.camera_set.unbind(self.sync_handler.push_image)
+
     self.sync_handler.flush()
     self.sync_handler = None
 
-    self.camera_set.release()
+    self.camera_set.stop()
     self.emit("on_stopped")
     self.logger.info("Stopped camera pipeline")
 
 
   def release(self):
-    if self.is_started:
-      self.stop()
+    self.stop()
 
     self.processor.stop()
     self.manager.release()

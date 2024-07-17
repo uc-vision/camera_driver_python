@@ -12,12 +12,13 @@ from . import helpers
 from camera_driver.driver import interface
 
 
-
 class Manager(interface.Manager):
-    def __init__(self, logger:Logger):
+    def __init__(self, presets:Dict[str, interface.SettingList], logger:Logger):
 
       self.logger = logger
       self.system = PySpin.System.GetInstance()
+
+      self.presets = presets
   
     def _devices(self) -> Dict[str, PySpin.CameraPtr]:
       camera_list = self.system.GetCameras()
@@ -30,7 +31,7 @@ class Manager(interface.Manager):
     
     def init_camera(self, name:str, serial:str) -> Camera:
       camera = self._devices()[serial]
-      return Camera(name, camera, logger=self.logger)
+      return Camera(name, camera, self.presets, logger=self.logger)
     
 
     def wait_for_cameras(self, cameras:Dict[str, str]):
@@ -44,16 +45,15 @@ class Manager(interface.Manager):
 
       by_serial = {serial:k for k, serial in cameras.items()}
       cameras_found = {}
+      self.logger.info(f"Waiting for cameras {by_serial}")
 
       while len(by_serial) > 0:
-        self.logger.info(f"Waiting for cameras {by_serial}")
-
         camera = queue.get()
         serial = str(helpers.get_camera_serial(camera))
         if serial in by_serial:
 
           name = by_serial[serial]
-          cameras_found[name] = Camera(name, camera, self.logger)
+          cameras_found[name] = Camera(name, camera, self.presets, self.logger)
           self.logger.info(f"Camera {name}:{serial} found.")
 
           del by_serial[serial]      

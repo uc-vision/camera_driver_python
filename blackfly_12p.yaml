@@ -10,9 +10,11 @@ backend: spinnaker
 
 # master: cam6
 
-camera_serials: 
-  left: 20068364
-  right: 19423933
+# camera_serials: 
+#   left: 20068364
+#   right: 19423933
+camera_serials:
+  right: 21264079
 
 master: right
 
@@ -25,7 +27,7 @@ timeout_msec: 2000        # timeout for images waiting to be matched up with a t
 # general parameters which can be changed at runtime
 parameters:  
   # camera parameters
-  exposure: 50000
+  exposure: 10000
   gain: 0
   framerate: 10.0
 

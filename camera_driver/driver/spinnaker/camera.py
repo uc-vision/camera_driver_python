@@ -13,8 +13,7 @@ from camera_driver.driver import interface
 
 from . import helpers
 
-SettingList = List[Dict]
-Settings = Dict[str, SettingList]
+
 
 
 class ImageEventHandler(PySpin.ImageEventHandler):
@@ -29,7 +28,7 @@ class ImageEventHandler(PySpin.ImageEventHandler):
 class Camera(interface.Camera):
 
   @beartype
-  def __init__(self, name:str, camera:PySpin.CameraPtr, logger:Logger):
+  def __init__(self, name:str, camera:PySpin.CameraPtr, presets:Dict[str, interface.SettingList], logger:Logger):
     self.camera = camera
 
     camera.Init()
@@ -40,6 +39,7 @@ class Camera(interface.Camera):
     self.name = name
 
     self.handler = None
+    self.presets = presets
 
 
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
@@ -76,13 +76,13 @@ class Camera(interface.Camera):
     return self.camera.GetTLStreamNodeMap()
 
   @beartype
-  def load_config(self, config:Settings, mode:str="slave"):
+  def setup_mode(self, mode:str="slave"):
     self.log(logging.INFO, f"Loading camera configuration ({mode})...")
     helpers.load_defaults(self.camera)
 
-    self._set_settings(self.stream_nodemap, config['stream'])
-    self._set_settings(self.nodemap, config['device'])
-    self._set_settings(self.nodemap, config[mode])
+    self._set_settings(self.stream_nodemap, self.config['stream'])
+    self._set_settings(self.nodemap, self.config['device'])
+    self._set_settings(self.nodemap, self.config[mode])
 
 
   def _set_settings(self, nodemap, config:Dict[str, Dict]):
@@ -155,6 +155,7 @@ class Camera(interface.Camera):
     self.emit("on_started", False)
 
   def release(self):
+    print("????")
     if self.started:
       self.stop()
 

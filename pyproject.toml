@@ -20,6 +20,8 @@ dependencies = [
   "numpy < 2.0",
   "omegaconf",
   "python-Levenshtein",
+  "opencv-python",
+  "camera_geometry_python"
 ]
 
 
