@@ -80,9 +80,9 @@ class Camera(interface.Camera):
     self.log(logging.INFO, f"Loading camera configuration ({mode})...")
     helpers.load_defaults(self.camera)
 
-    self._set_settings(self.stream_nodemap, self.config['stream'])
-    self._set_settings(self.nodemap, self.config['device'])
-    self._set_settings(self.nodemap, self.config[mode])
+    self._set_settings(self.stream_nodemap, self.presets['stream'])
+    self._set_settings(self.nodemap, self.presets['device'])
+    self._set_settings(self.nodemap, self.presets[mode])
 
 
   def _set_settings(self, nodemap, config:Dict[str, Dict]):

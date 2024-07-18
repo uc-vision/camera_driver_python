@@ -89,8 +89,6 @@ camera_settings:
     - LineSelector: Line2
     - LineMode: Output
     - TriggerSource: Software
-
     - AcquisitionFrameRateEnable: True
-    - AcquisitionFrameRate: 10.0
 
     

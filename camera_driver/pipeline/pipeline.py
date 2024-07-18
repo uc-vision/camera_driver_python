@@ -1,5 +1,6 @@
 from dataclasses import replace
 import logging
+from typing import Set
 from beartype.typing import Dict
 
 import torch
@@ -17,6 +18,8 @@ from .image.image_outputs import ImageOutputs
 
 from camera_driver.concurrent.taichi_queue import TaichiQueue
 
+def missing_cameras(serials:Set[str], requred:Dict[str, str]):
+  return 
 
 @beartype
 def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
@@ -24,9 +27,9 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
   manager = config.backend.create(config.camera_settings, logger)
   logger.info(f"Found cameras {manager.camera_serials()}")
 
-  cameras_required = set(config.camera_serials.values())
-  if cameras_required > manager.camera_serials():
-    raise ValueError(f"Camera(s) not found: {cameras_required - manager.camera_serials()}")
+  missing = {name:serial for name, serial in config.camera_serials.items() if serial not in manager.camera_serials()}
+  if len(missing) > 0:
+    raise ValueError(f"Camera(s) not found: {missing}")
 
   if config.reset_cycle is True:
     manager.reset_cameras(manager.camera_serials())
@@ -36,6 +39,9 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
     cameras = {name:manager.init_camera(name, serial)
             for name, serial in config.camera_serials.items()}
 
+  for k, camera in cameras.items():
+    camera.setup_mode("master" if k == config.master else "slave")
+    camera.update_properties(config.parameters.camera_properties)
     
   return cameras, manager
 
@@ -62,15 +68,11 @@ class CameraPipeline(Dispatcher):
     cameras, manager = cameras_from_config(config, logger)
     self.camera_set = CameraSet(cameras, logger, master=config.master)
 
-    self.camera_set.update_properties(
-      config.parameters.camera_properties)
-
     self.sync_handler = None
     self.manager = manager
     self.logger = logger
 
     self.camera_info = {name:get_camera_info(name, camera) for name, camera in cameras.items()}
-    
     self.processor = FrameProcessor(self.camera_info, settings=config.parameters, 
                                     logger=logger, device=torch.device(config.device))
   
@@ -87,7 +89,9 @@ class CameraPipeline(Dispatcher):
 
   def update_settings(self, image_settings:ImageSettings):
     self.processor.update_settings(image_settings)
-    self.camera_set.update_properties(image_settings.camera_properties)
+
+    if self.is_started:
+      self.camera_set.update_properties(image_settings.camera_properties)
 
     self.config = replace(self.config, parameters=image_settings)
     self.emit("on_settings", image_settings)
@@ -100,10 +104,6 @@ class CameraPipeline(Dispatcher):
 
     self.logger.info("Starting camera pipeline")
     timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
-
-    for k, camera in self.camera_set.cameras.items():
-      camera.setup_mode("master" if k == self.config.master else "slave")
-
 
     self.sync_handler = SyncHandler(time_offsets=timestamp_offsets,
                                     sync_threshold=self.config.sync_threshold_msec / 1000.,

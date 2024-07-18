@@ -65,7 +65,7 @@ class Manager(interface.Manager):
 
 
     def reset_cameras(self, camera_set:Set[str]):
-      assert camera_set <= self.camera_serials(), f"Camera(s) not found {camera_set - self.camera_serials()}"
+      assert camera_set <= self.camera_serials(), f"reset_cameras: camera(s) not found {camera_set - self.camera_serials()}"      
 
       cameras = self._devices()
       self.logger.info(f"Resetting {len(cameras)} cameras...")

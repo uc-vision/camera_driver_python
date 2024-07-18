@@ -1,5 +1,6 @@
 from functools import cache
 import logging
+from typing import Set
 from beartype.typing import Dict, Optional
 
 from beartype import beartype
@@ -8,8 +9,6 @@ from .sync_handler import TimeQuery
 
 from camera_driver.driver.interface  import Buffer, Camera, CameraProperties
 from pydispatch import Dispatcher
-
-
 
 
 class CameraSet(Dispatcher):

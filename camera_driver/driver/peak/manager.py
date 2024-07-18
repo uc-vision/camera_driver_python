@@ -40,7 +40,7 @@ class Manager(interface.Manager):
       if camera_set is None:
         camera_set = self.camera_serials()
 
-      assert camera_set <= self.camera_serials(), f"Camera(s) not found {camera_set - self.camera_serials()}"      
+      assert camera_set <= self.camera_serials(), f"reset_cameras: camera(s) not found {camera_set - self.camera_serials()}"      
       devices = self.devices
       self.devices = {}
 
