@@ -42,28 +42,7 @@ class Camera(interface.Camera):
 
 
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
-    # return helpers.camera_time_offset(self.camera, get_time_sec)
-    self.setup_mode("master")
-    offsets = []
-
-    def on_buffer(buffer:Buffer):
-      offset = get_time_sec() - buffer.timestamp_sec 
-      offsets.append(offset)
-      
-    
-    self.bind(on_buffer = on_buffer)
-    self.start()
-
-    while len(offsets) < 50:
-      pass
-
-    offsets = offsets[1:]
-
-    offset = np.mean(offsets)
-    self.logger.info(f"Camera {self.name} offset: {offset} std: {np.std(offsets)}")
-
-    self.unbind(on_buffer)
-    return offset
+    return helpers.camera_time_offset(self.camera, get_time_sec)
 
 
   @property
