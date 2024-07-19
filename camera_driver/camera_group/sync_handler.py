@@ -54,6 +54,7 @@ class SyncHandler(Dispatcher):
 
 
   def _process_worker(self, buffer:Buffer):
+    print(buffer.camera_name)
     image = self.process_buffer(buffer)
     group = self.grouper.add_frame(image)
 

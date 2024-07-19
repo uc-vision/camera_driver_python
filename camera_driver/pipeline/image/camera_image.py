@@ -61,8 +61,11 @@ class CameraInfo:
   image_size:Tuple[int, int]
   encoding : ImageEncoding
 
+  throughput_mb : float 
+  model : str 
+
   calibration : Optional[Camera] = None
 
   def __repr__(self):    
     w, h = self.image_size
-    return f"CameraInfo({self.name}:{self.serial} {w}x{h} {self.encoding})"
+    return f"CameraInfo({self.name}:{self.serial} {self.model} {w}x{h} {self.encoding} {self.throughput_mb:.2f}MB/s)"

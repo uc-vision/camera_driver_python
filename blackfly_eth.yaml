@@ -1,24 +1,18 @@
 backend: spinnaker
 
-# camera_serials:
-#   cam1: 22083908 # TOP 
-#   cam2: 22083922 # SECOND FROM TOP
-#   cam3: 22083907 # MIDDLE TOP
-#   cam4: 22083916 # MIDDLE BOT 
-#   cam5: 22083921 # SECOND FROM BOTTOM 
-#   cam6: 22083915 # BOTTOM
 
-# master: cam6
-
-# camera_serials: 
-#   left: 20068364
-#   right: 19423933
 camera_serials:
-  right: 21264079
+  cam1: 22580855
+  cam2: 22580857
+  cam3: 22395934
+  cam4: 22580858
+  cam5: 22395939
+  cam6: 22395922
 
-master: right
+master: cam6
 
-reset_cycle: True
+
+reset_cycle: False 
 device: cuda:0
 
 sync_threshold_msec: 10   # threshold to consider images from the same trigger
@@ -27,13 +21,13 @@ timeout_msec: 2000        # timeout for images waiting to be matched up with a t
 # general parameters which can be changed at runtime
 parameters:  
   # camera parameters
-  exposure: 10000
+  exposure: 2000
   gain: 0
-  framerate: 10.0
+  framerate: 5.0
 
   # output parameters
   jpeg_quality: 96
-  resize_width: 3072 
+  resize_width: 0
   preview_size: 200
 
   # Tonemapping parameters
@@ -48,10 +42,9 @@ parameters:
   # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
   transform: rotate_90
 
-
 camera_settings:
   device:
-    # - UserSetSelector: Default
+    - UserSetSelector: Default
     - PixelFormat: BayerRG12p
 
     # Turn all the auto off
@@ -61,12 +54,19 @@ camera_settings:
     - BlackLevel: 0
     - BlackLevelClampingEnable: False
     - GammaEnable: False
-    - BalanceRatio: 2.0
 
+    - GevIEEE1588: False    
     - ChunkModeActive: True
+    
     - ChunkSelector: "Timestamp"
     - ChunkEnable: True
 
+    - GevSCPSPacketSize: 9000
+    #- GevSCPD: 11500 # 2 cameras 1g connection 11312
+    #- GevSCPD: 25000 # 3 cameras 1g connection 22624
+    #- GevSCPD: 40000 # 4 cameras 1g connection 33936
+    #- GevSCPD: 20000 # 4 cameras 2.5g connection 18099.2
+    - GevSCPD: 6000 # 6 cameras 1g connection 56560
 
   stream:
     - StreamBufferCountMode: Manual
@@ -89,5 +89,3 @@ camera_settings:
     - LineMode: Output
     - TriggerSource: Software
     - AcquisitionFrameRateEnable: True
-
-    

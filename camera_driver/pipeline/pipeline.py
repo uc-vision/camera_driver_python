@@ -18,8 +18,6 @@ from .image.image_outputs import ImageOutputs
 
 from camera_driver.concurrent.taichi_queue import TaichiQueue
 
-def missing_cameras(serials:Set[str], requred:Dict[str, str]):
-  return 
 
 @beartype
 def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
@@ -51,6 +49,9 @@ def get_camera_info(name:str, camera:Camera):
     serial=camera.serial,
     image_size=camera.image_size,
     encoding=camera.encoding,
+
+    model=camera.model,
+    throughput_mb=float(camera.throughput_mb)
   )
 
 
@@ -73,6 +74,10 @@ class CameraPipeline(Dispatcher):
     self.logger = logger
 
     self.camera_info = {name:get_camera_info(name, camera) for name, camera in cameras.items()}
+
+    for info in self.camera_info.values():
+      logger.info(str(info))
+
     self.processor = FrameProcessor(self.camera_info, settings=config.parameters, 
                                     logger=logger, device=torch.device(config.device))
   

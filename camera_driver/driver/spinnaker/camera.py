@@ -14,8 +14,6 @@ from camera_driver.driver import interface
 from . import helpers
 
 
-
-
 class ImageEventHandler(PySpin.ImageEventHandler):
   def __init__(self, on_image):
     super(ImageEventHandler, self).__init__()
@@ -56,6 +54,15 @@ class Camera(interface.Camera):
       if pixel_format not in camera_encodings:
         raise ValueError(f"Unsupported pixel format {pixel_format}")
       return camera_encodings[pixel_format]
+  
+  @property
+  def throughput_mb(self) -> float:
+    t = helpers.get_value(self.nodemap, "DeviceLinkCurrentThroughput")
+    return t / 1e6
+  
+  @property
+  def model(self) -> str:
+    return helpers.get_value(self.nodemap, "DeviceModelName")
   
   @property
   def serial(self) -> str:
@@ -121,7 +128,6 @@ class Camera(interface.Camera):
     helpers.set_int(self.nodemap, "ExposureTime", int(settings.exposure))
 
 
-  
 
   @property
   def started(self):
@@ -155,7 +161,6 @@ class Camera(interface.Camera):
     self.emit("on_started", False)
 
   def release(self):
-    print("????")
     if self.started:
       self.stop()
 

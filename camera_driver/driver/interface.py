@@ -69,7 +69,6 @@ class Camera(Dispatcher, metaclass=abc.ABCMeta):
     raise NotImplementedError()
   
 
-
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
     raise NotImplementedError()
 
@@ -88,6 +87,17 @@ class Camera(Dispatcher, metaclass=abc.ABCMeta):
   @abc.abstractmethod
   def serial(self) -> str:
     raise NotImplementedError()
+
+
+  @abc.abstractmethod
+  def model(self) -> str:
+    raise NotImplementedError()
+  
+  @property
+  def throughput_mb(self) -> float:
+    raise NotImplementedError()
+  
+
 
 
   @abc.abstractmethod

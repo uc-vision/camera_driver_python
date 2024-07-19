@@ -29,6 +29,7 @@ node_type_mapping = {
    2: PySpin.CIntegerPtr,
    3: PySpin.CBooleanPtr,
    5: PySpin.CFloatPtr,
+   6: PySpin.CStringPtr,
    9: PySpin.CEnumerationPtr
 }
 
