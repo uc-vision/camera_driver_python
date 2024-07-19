@@ -1,12 +1,15 @@
 from dataclasses import replace
 from datetime import datetime
 from beartype.typing import Dict, List, Optional
+import numpy as np
 
 from camera_driver.data import Timestamped
 
 
 def nearest_minute(timestamp:datetime):
   return datetime(timestamp.year, timestamp.month, timestamp.day, timestamp.hour, timestamp.minute, 0)
+
+
 
 
 class FrameGroup:
@@ -29,7 +32,13 @@ class FrameGroup:
 
   @property
   def timestamp(self):
-    return sum([frame.timestamp_sec for frame in self.frames.values()]) / len(self.frames)
+    return np.mean([frame.timestamp_sec for frame in self.frames.values()]) 
+  
+  @property 
+  def clock_time(self):
+    return np.mean([frame.clock_time_sec for frame in self.frames.values()]) 
+
+
   
   @property
   def camera_set(self) -> set[str]:

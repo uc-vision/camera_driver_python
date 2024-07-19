@@ -40,6 +40,7 @@ class SyncHandler(Dispatcher):
                                 logger=logger, num_workers=1, max_size=self.num_cameras)
     
     self.query_time = query_time
+    self.offset_buffers = {camera:[] for camera in time_offsets.keys()}
     
 
   @property
@@ -61,6 +62,8 @@ class SyncHandler(Dispatcher):
     if group is not None:
       t = group.timestamp
       frames = {k:frame.with_timestamp(t) for k,frame in group.frames.items()}
+
+      self.logger.info(f"{group.clock_time - t:.4f}")
 
       self.emit("on_group", frames)
 

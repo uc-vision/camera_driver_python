@@ -1,7 +1,6 @@
 
 from logging import Logger
-from time import sleep
-from beartype.typing import Dict, List, Set
+from beartype.typing import Dict, Set
 
 from queue import Queue
 

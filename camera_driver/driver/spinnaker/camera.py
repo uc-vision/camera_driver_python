@@ -5,6 +5,7 @@ from beartype.typing import  Callable, Dict, List
 import PySpin
 
 from beartype import beartype
+import numpy as np
 
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
 from .buffer import Buffer
@@ -41,7 +42,29 @@ class Camera(interface.Camera):
 
 
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
-    return helpers.camera_time_offset(self.camera, get_time_sec)
+    # return helpers.camera_time_offset(self.camera, get_time_sec)
+    self.setup_mode("master")
+    offsets = []
+
+    def on_buffer(buffer:Buffer):
+      offset = get_time_sec() - buffer.timestamp_sec 
+      offsets.append(offset)
+      
+    
+    self.bind(on_buffer = on_buffer)
+    self.start()
+
+    while len(offsets) < 50:
+      pass
+
+    offsets = offsets[1:]
+
+    offset = np.mean(offsets)
+    self.logger.info(f"Camera {self.name} offset: {offset} std: {np.std(offsets)}")
+
+    self.unbind(on_buffer)
+    return offset
+
 
   @property
   def image_size(self):
@@ -90,6 +113,9 @@ class Camera(interface.Camera):
     self._set_settings(self.stream_nodemap, self.presets['stream'])
     self._set_settings(self.nodemap, self.presets['device'])
     self._set_settings(self.nodemap, self.presets[mode])
+
+  
+  
 
 
   def _set_settings(self, nodemap, config:Dict[str, Dict]):

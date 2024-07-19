@@ -11,7 +11,7 @@ from camera_driver.driver import interface
 
 
 class Manager(interface.Manager):
-    def __init__(self, presets:Dict[interface.SettingList], logger:Logger):
+    def __init__(self, presets:Dict[str, interface.SettingList], logger:Logger):
 
       self.logger = logger
       self.presets = presets

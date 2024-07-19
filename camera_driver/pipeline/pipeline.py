@@ -9,6 +9,7 @@ from pydispatch import Dispatcher
 
 from camera_driver.camera_group.camera_set import CameraSet
 from camera_driver.camera_group.sync_handler import SyncHandler, TimeQuery
+from camera_driver.camera_group.time_sync import TimeSyncer
 from camera_driver.driver.interface import Buffer, Camera
 
 from .config import CameraPipelineConfig, ImageSettings
@@ -66,6 +67,8 @@ class CameraPipeline(Dispatcher):
     self.config = config
     self.query_time = query_time
 
+    self.start_time_sec = query_time()
+
     cameras, manager = cameras_from_config(config, logger)
     self.camera_set = CameraSet(cameras, logger, master=config.master)
 
@@ -110,6 +113,9 @@ class CameraPipeline(Dispatcher):
     self.logger.info("Starting camera pipeline")
     timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
 
+    for camera, offset in timestamp_offsets.items():
+      self.logger.info(f"Camera {camera} offset {offset - self.start_time_sec:.4f}")
+
     self.sync_handler = SyncHandler(time_offsets=timestamp_offsets,
                                     sync_threshold=self.config.sync_threshold_msec / 1000.,
                                     sync_timeout=self.config.timeout_msec / 1000.,
@@ -121,6 +127,8 @@ class CameraPipeline(Dispatcher):
     self.sync_handler.bind(on_group=self.processor.process_image_set)
 
     self.camera_set.bind(on_buffer=self.sync_handler.push_image)
+
+
     self.camera_set.start()
     self.logger.info("Started camera pipeline")
 

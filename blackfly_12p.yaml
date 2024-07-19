@@ -10,11 +10,11 @@ backend: spinnaker
 
 # master: cam6
 
-# camera_serials: 
-#   left: 20068364
-#   right: 19423933
-camera_serials:
-  right: 21264079
+camera_serials: 
+  left: 20068364
+  right: 19423933
+# camera_serials:
+#   right: 21264079
 
 master: right
 
