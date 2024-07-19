@@ -85,5 +85,4 @@ class DeviceFoundCallback(ids_peak.DeviceManagerDeviceFoundCallbackBase):
     self.manager = manager
 
   def call(self, device:ids_peak.DeviceDescriptor):
-    print(f"Device found {device.SerialNumber()}")
     self.manager.devices[device.SerialNumber()] = device

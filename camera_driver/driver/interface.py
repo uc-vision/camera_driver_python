@@ -88,13 +88,14 @@ class Camera(Dispatcher, metaclass=abc.ABCMeta):
   def serial(self) -> str:
     raise NotImplementedError()
 
-
+  @property
   @abc.abstractmethod
   def model(self) -> str:
     raise NotImplementedError()
   
   @property
-  def throughput_mb(self) -> float:
+  @abc.abstractmethod
+  def throughput_mb(self) -> Tuple[float, float]:
     raise NotImplementedError()
   
 

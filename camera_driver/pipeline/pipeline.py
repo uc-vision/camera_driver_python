@@ -45,6 +45,8 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
   return cameras, manager
 
 def get_camera_info(name:str, camera:Camera):
+  t, t_max = camera.throughput_mb
+
   return CameraInfo(
     name=name,
     serial=camera.serial,
@@ -52,7 +54,7 @@ def get_camera_info(name:str, camera:Camera):
     encoding=camera.encoding,
 
     model=camera.model,
-    throughput_mb=float(camera.throughput_mb)
+    throughput_mb=(t, t_max)
   )
 
 

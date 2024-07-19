@@ -1,6 +1,7 @@
 
 from logging import Logger
 import logging
+from typing import Tuple
 from beartype.typing import  Callable, Dict, List
 import PySpin
 
@@ -58,9 +59,11 @@ class Camera(interface.Camera):
       return camera_encodings[pixel_format]
   
   @property
-  def throughput_mb(self) -> float:
+  def throughput_mb(self) -> Tuple[float, float]:
     t = helpers.get_value(self.nodemap, "DeviceLinkCurrentThroughput")
-    return t / 1e6
+    t_max = helpers.get_value(self.nodemap, "DeviceLinkThroughputLimit")
+
+    return (t / 1e6, t_max / 1e6)
   
   @property
   def model(self) -> str:

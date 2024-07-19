@@ -1,5 +1,5 @@
+from collections import deque
 import logging
-from typing import Set
 from beartype.typing import Callable, Dict
 
 from beartype import beartype
@@ -41,8 +41,9 @@ class SyncHandler(Dispatcher):
     
     self.query_time = query_time
     self.offset_buffers = {camera:[] for camera in time_offsets.keys()}
-    
 
+    self.clock_drift = deque(maxlen=50)
+    
   @property
   def num_cameras(self):
     return self.grouper.num_cameras
@@ -55,7 +56,6 @@ class SyncHandler(Dispatcher):
 
 
   def _process_worker(self, buffer:Buffer):
-    print(buffer.camera_name)
     image = self.process_buffer(buffer)
     group = self.grouper.add_frame(image)
 
@@ -63,8 +63,7 @@ class SyncHandler(Dispatcher):
       t = group.timestamp
       frames = {k:frame.with_timestamp(t) for k,frame in group.frames.items()}
 
-      self.logger.info(f"{group.clock_time - t:.4f}")
-
+      self.clock_drift.append(group.clock_time - t) 
       self.emit("on_group", frames)
 
     timed_out = self.grouper.timeout_groups(self.query_time())
