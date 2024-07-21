@@ -1,6 +1,6 @@
 
 from enum import Enum
-from typing import List
+from typing import List, Optional
 from beartype.typing import Callable, Set, Tuple, Dict
 import abc
 import importlib
@@ -14,6 +14,7 @@ from camera_driver.data.encoding import ImageEncoding
 
 
 from dataclasses import dataclass
+from camera_geometry import Camera
 
 @beartype
 @dataclass
@@ -25,8 +26,6 @@ class CameraProperties:
 
 SettingList = List[Dict]
 
-
-  
 class Buffer(metaclass=abc.ABCMeta):
 
   @property
@@ -61,6 +60,28 @@ class Buffer(metaclass=abc.ABCMeta):
 
   
 
+
+@beartype
+@dataclass
+class CameraInfo:
+  name : str
+  serial:str
+  
+  image_size:Tuple[int, int]
+  encoding : ImageEncoding
+
+  throughput_mb : Tuple[float, float] 
+  model : str 
+
+  calibration : Optional[Camera] = None
+  has_latching : bool = False
+
+  def __repr__(self):    
+    w, h = self.image_size
+    t, t_max = self.throughput_mb
+    return f"CameraInfo({self.name}:{self.serial} {self.model} {w}x{h} {self.encoding} {t:.1f}/{t_max:.1f}MB/s)"
+
+
 class Camera(Dispatcher, metaclass=abc.ABCMeta):
   _events_ = ["on_started", "on_buffer"]
 
@@ -68,34 +89,12 @@ class Camera(Dispatcher, metaclass=abc.ABCMeta):
   def setup_mode(self, mode:str):
     raise NotImplementedError()
   
-
+  @abc.abstractmethod
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
     raise NotImplementedError()
-
-  @property
-  @abc.abstractmethod
-  def image_size(self):
-    raise NotImplementedError()
-
-
-  @property
-  @abc.abstractmethod
-  def encoding(self) -> ImageEncoding:
-    raise NotImplementedError()
-
-  @property
-  @abc.abstractmethod
-  def serial(self) -> str:
-    raise NotImplementedError()
-
-  @property
-  @abc.abstractmethod
-  def model(self) -> str:
-    raise NotImplementedError()
   
-  @property
   @abc.abstractmethod
-  def throughput_mb(self) -> Tuple[float, float]:
+  def camera_info(self) -> CameraInfo:
     raise NotImplementedError()
   
 

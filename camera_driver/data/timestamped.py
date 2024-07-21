@@ -20,7 +20,11 @@ class Timestamped:
   def stamp_pretty(self):
     return self.datetime.strftime('%M%S.3f')
 
-  def with_timestamp(self, timestamp_sec:float):
+  def with_timestamp(self, timestamp_sec:float) -> 'Timestamped':
     return replace(self, timestamp_sec=timestamp_sec)
+  
+  def subtract_timestamp(self, offset:float) -> 'Timestamped':
+    return self.with_timestamp(self.timestamp_sec - offset)
+
 
   

@@ -13,9 +13,8 @@ def nearest_minute(timestamp:datetime):
 
 
 class FrameGroup:
-  def __init__(self, frame:Timestamped, expected_cameras:set[str]):
+  def __init__(self, frame:Timestamped):
     self.frames = {frame.camera_name:frame}
-    self.expected_cameras = expected_cameras
     
   def can_group(self, frame:Timestamped, threshold_sec:float=0.05):
     return (frame.camera_name not in self.frames 
@@ -42,11 +41,8 @@ class FrameGroup:
   
   @property
   def camera_set(self) -> set[str]:
-    return set(self.frames.keys())
+    return set(sorted(self.frames.keys()))
   
-  @property
-  def missing_cameras(self) -> set[str]:
-    return self.expected_cameras - self.camera_set
 
   def __len__(self) -> int:
     return len(self.frames)
@@ -58,13 +54,18 @@ class FrameGroup:
   @property
   def time_offsets(self):
     # compute time offset relative to mean timestamp
-    return {name:frame.timestamp_sec - self.timestamp for name, frame in self.frames.items()}
+    return {name:frame.timestamp_sec - self.timestamp 
+            for name, frame in sorted(self.frames.items())}
+    
+
+  @property
+  def time_offset_vec(self):
+    return np.array(list(self.time_offsets.values()))
 
 
 
 class FrameGrouper():
-  def __init__(self, time_offsets:Dict[str, float], timeout_sec:float=2.0, threshold_sec:float=0.05):
-    self.timeout_sec = timeout_sec
+  def __init__(self, time_offsets:Dict[str, float], threshold_sec:float=0.05):
     self.threshold_sec = threshold_sec
 
     self.time_offsets = time_offsets
@@ -79,6 +80,9 @@ class FrameGrouper():
   def clear(self):
     self.groups = []
     
+  @property
+  def time_offset_vec(self):
+    return np.array(sorted(self.time_offsets).values())
 
   def group_frame(self, frame:Timestamped) -> FrameGroup:
     for group in self.groups:
@@ -86,7 +90,7 @@ class FrameGrouper():
         group.append(frame)
         return group
       
-    group = FrameGroup(frame, self.camera_set)
+    group = FrameGroup(frame)
     self.groups.append(group)
     return group   
       
@@ -97,10 +101,14 @@ class FrameGrouper():
     for name, offset in group.time_offsets.items():
       self.time_offsets[name] -= offset
 
+  def set_offsets(self, offsets:Dict[str, float]):
+    assert set(offsets.keys()) == self.camera_set, "offsets must match camera set"
+    self.time_offsets = offsets
 
-  def timeout_groups(self, current_time:float) -> List[FrameGroup]:
+
+  def timeout_groups(self, timeout_time:float) -> List[FrameGroup]:
     timed_out = [group for group in self.groups
-                  if current_time - group.timestamp > self.timeout_sec]
+                  if timeout_time > group.timestamp ]
 
     for group in timed_out:
       self.groups.remove(group)
@@ -112,8 +120,7 @@ class FrameGrouper():
 
     group = self.group_frame(frame)      
     if len(group) == self.num_cameras:
-      self.groups.remove(group)
-      self.update_offsets(group)      
-      
+      self.groups.remove(group)      
       return group
+    
     return None

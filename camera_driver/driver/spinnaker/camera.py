@@ -1,6 +1,7 @@
 
 from logging import Logger
 import logging
+import traceback
 from typing import Tuple
 from beartype.typing import  Callable, Dict, List
 import PySpin
@@ -45,6 +46,18 @@ class Camera(interface.Camera):
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
     return helpers.camera_time_offset(self.camera, get_time_sec)
 
+
+  def camera_info(self) -> interface.CameraInfo:
+    return interface.CameraInfo(
+      name=self.name,
+      serial=self.serial,
+      image_size=self.image_size,
+      encoding=self.encoding,
+      model=self.model,
+      throughput_mb=self.throughput_mb,
+
+      has_latching=True
+    )
 
   @property
   def image_size(self):
@@ -122,8 +135,8 @@ class Camera(interface.Camera):
     else:
       try:
         self.emit("on_buffer", Buffer(self.name, image))
-      except Exception as e:
-        self.log(logging.ERROR, f"Error handling image: {repr(e)}")
+      except Exception:
+        self.log(logging.ERROR, f"Error handling image: {traceback.format_exc()}")
 
 
 

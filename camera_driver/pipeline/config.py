@@ -74,17 +74,19 @@ class ImageSettings:
 
 
 @beartype
-@dataclass 
+@dataclass(kw_only=True, frozen=True)
 class CameraPipelineConfig:
   backend:BackendType
   camera_serials:Dict[str, str]
 
-  master:Optional[str]
-  reset_cycle:bool
-  sync_threshold_msec:float
-  timeout_msec:float
+  master:Optional[str] 
+  reset_cycle:bool = True
 
-  device:str
+  init_window:int = 10
+  sync_threshold_msec:float = 10
+  timeout_msec:float = 2.0
+
+  device:str = 'cuda'
 
   parameters: ImageSettings
   camera_settings: Dict[str, List]

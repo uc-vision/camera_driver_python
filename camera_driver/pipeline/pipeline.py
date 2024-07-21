@@ -3,13 +3,14 @@ import logging
 from typing import Set
 from beartype.typing import Dict
 
+from camera_driver.data.util import wait_for
 import torch
 from beartype import beartype
 from pydispatch import Dispatcher
 
 from camera_driver.camera_group.camera_set import CameraSet
 from camera_driver.camera_group.sync_handler import SyncHandler, TimeQuery
-from camera_driver.camera_group.time_sync import TimeSyncer
+from camera_driver.camera_group.initializer import Initialiser, SyncHandlerWithInit
 from camera_driver.driver.interface import Buffer, Camera
 
 from .config import CameraPipelineConfig, ImageSettings
@@ -106,6 +107,25 @@ class CameraPipeline(Dispatcher):
     self.config = replace(self.config, parameters=image_settings)
     self.emit("on_settings", image_settings)
 
+  def initialize_offsets(self):
+      init = Initialiser(self.camera_set.camera_ids, 
+                         self.query_time, 
+                init_window=self.config.init_window, 
+                sync_threshold=self.config.sync_threshold_msec / 1000., 
+                logger=self.logger)
+      
+      self.camera_set.bind(on_buffer=init.push_image)
+      self.camera_set.start()
+
+      offsets = wait_for(init, 'initialized', self.config.self.config.init_timeout / 1000.)
+      self.camera_set.unbind(init.push_image)
+
+      self.camera_set.stop()
+
+      if offsets is None:
+        raise RuntimeError(f"Failed to initialize camera offsets, recieved: {init.frame_counts()}")
+
+      return offsets
 
   def start(self):
     if self.is_started:
@@ -113,7 +133,11 @@ class CameraPipeline(Dispatcher):
       return 
 
     self.logger.info("Starting camera pipeline")
-    timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
+
+    if self.camera_set.has_latching():
+      timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
+    else:
+      timestamp_offsets = self.initialize_offsets()
 
     for camera, offset in timestamp_offsets.items():
       self.logger.info(f"Camera {camera} offset {offset - self.start_time_sec:.4f}")
@@ -126,9 +150,8 @@ class CameraPipeline(Dispatcher):
                                     query_time=self.query_time, 
                                     logger=self.logger)    
 
-    self.sync_handler.bind(on_group=self.processor.process_image_set)
-
     self.camera_set.bind(on_buffer=self.sync_handler.push_image)
+    self.sync_handler.bind(on_group=self.processor.process_image_set)
 
 
     self.camera_set.start()

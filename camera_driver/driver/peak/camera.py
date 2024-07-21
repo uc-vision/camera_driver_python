@@ -40,6 +40,19 @@ class Camera(Dispatcher):
     raise NotImplementedError()
 
 
+  def camera_info(self) -> interface.CameraInfo:
+    return interface.CameraInfo(
+      name=self.name,
+      serial=self.serial,
+      image_size=self.image_size,
+      encoding=self.encoding,
+      model=self.model,
+      throughput_mb=self.throughput_mb,
+
+      has_latching=False
+    )
+
+
   @property
   def image_size(self) -> Tuple[int, int]:
     w = self.node_value("Width")

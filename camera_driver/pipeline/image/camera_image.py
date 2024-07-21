@@ -51,22 +51,3 @@ def numpy_torch(arr:np.array, device=torch.device("cpu")):
     return torch.from_numpy(arr).to(device=device, non_blocking=True)
 
 
-@beartype
-@dataclass
-class CameraInfo:
-  name : str
-
-  serial:str
-  
-  image_size:Tuple[int, int]
-  encoding : ImageEncoding
-
-  throughput_mb : Tuple[float, float] 
-  model : str 
-
-  calibration : Optional[Camera] = None
-
-  def __repr__(self):    
-    w, h = self.image_size
-    t, t_max = self.throughput_mb
-    return f"CameraInfo({self.name}:{self.serial} {self.model} {w}x{h} {self.encoding} {t:.1f}/{t_max:.1f}MB/s)"

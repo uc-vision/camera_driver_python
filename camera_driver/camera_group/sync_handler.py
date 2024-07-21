@@ -1,5 +1,6 @@
 from collections import deque
 import logging
+from typing import Optional, Set
 from beartype.typing import Callable, Dict
 
 from beartype import beartype
@@ -19,13 +20,14 @@ class SyncHandler(Dispatcher):
   _events_ = ["on_group"]
 
   @beartype
-  def __init__(self, time_offsets:Dict[str, float], 
+  def __init__(self, camera_set:Set[str], 
           sync_threshold:float, 
           sync_timeout:float, 
 
           process_buffer:ProcessBuffer,
           query_time:TimeQuery,  
 
+          time_offsets:Optional[Dict[str, float]],
           logger:logging.Logger):
     
     
@@ -35,18 +37,18 @@ class SyncHandler(Dispatcher):
 
     self.process_buffer = process_buffer
 
+    self.camera_set = camera_set
+
     self.grouper = FrameGrouper(time_offsets, sync_timeout, sync_threshold)
     self.work_queue = WorkQueue("sync_handler", self._process_worker, 
                                 logger=logger, num_workers=1, max_size=self.num_cameras)
     
     self.query_time = query_time
-    self.offset_buffers = {camera:[] for camera in time_offsets.keys()}
-
     self.clock_drift = deque(maxlen=50)
     
   @property
   def num_cameras(self):
-    return self.grouper.num_cameras
+    return self.camera_set.num_cameras
   
 
   def push_image(self, buffer:Buffer):
@@ -60,14 +62,17 @@ class SyncHandler(Dispatcher):
     group = self.grouper.add_frame(image)
 
     if group is not None:
+      self.grouper.update_offsets(group)      
+
       t = group.timestamp
       frames = {k:frame.with_timestamp(t) for k,frame in group.frames.items()}
 
-      self.clock_drift.append(group.clock_time - t) 
+      self.clock_drift.append(group.clock_time - t)  
       self.emit("on_group", frames)
 
-    timed_out = self.grouper.timeout_groups(self.query_time())
+    timed_out = self.grouper.timeout_groups(self.query_time() - self.sync_timeout)
     for group in timed_out:
+      missing = group.camera_set
       self.logger.warning(f"Dropping timed out, missing {group.missing_cameras}")
 
     buffer.release()
