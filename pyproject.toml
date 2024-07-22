@@ -1,6 +1,6 @@
 [project]
 name = "camera-driver-python"  
-version = "0.1.2"  
+version = "0.2.0"  
 description = "A simplified multi camera driver interface"  
 readme = "README.md" 
 requires-python = ">=3.10"
@@ -15,6 +15,7 @@ dependencies = [
   "python-dispatch",
   "nvjpeg-torch>=0.1.0",
   "taichi_image",
+  "taichi",
   "disable_gc",
   "fuzzywuzzy",
   "numpy < 2.0",
