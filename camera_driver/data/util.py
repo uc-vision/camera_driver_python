@@ -24,3 +24,14 @@ def wait_for(dispatcher, name, timeout=10):
 
   dispatcher.unbind(f)
   return result
+
+
+def lerp(t, a, b):
+  return a + t * (b - a)
+
+
+
+def dict_item(d:Dict):
+  k = next(iter(d)) # setting.keys()[0]
+  v = d[k]
+  return k, v

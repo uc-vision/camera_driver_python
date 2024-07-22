@@ -5,6 +5,7 @@ from beartype.typing import Callable, Dict
 
 from beartype import beartype
 
+from camera_driver.data.util import lerp
 from camera_driver.driver.interface import Buffer
 from camera_driver.data import Timestamped
 from camera_driver.concurrent.work_queue import WorkQueue
@@ -44,7 +45,9 @@ class SyncHandler(Dispatcher):
                                 logger=logger, num_workers=1, max_size=self.num_cameras)
     
     self.query_time = query_time
-    self.clock_drift = deque(maxlen=50)
+    self.clock_drift = 0.0
+
+    self.most_recent_frame = 0.0
     
   @property
   def num_cameras(self):
@@ -67,13 +70,15 @@ class SyncHandler(Dispatcher):
       t = group.timestamp
       frames = {k:frame.with_timestamp(t) for k,frame in group.frames.items()}
 
-      self.clock_drift.append(group.clock_time - t)  
+      self.clock_drift = lerp(0.02, group.clock_time - t, self.clock_drift)
+      self.most_recent_frame = t
+      
       self.emit("on_group", frames)
 
     timed_out = self.grouper.timeout_groups(self.query_time() - self.sync_timeout)
     for group in timed_out:
-      missing = group.camera_set
-      self.logger.warning(f"Dropping timed out, missing {group.missing_cameras}")
+      missing = self.camera_set - group.camera_set
+      self.logger.warning(f"Dropping timed out, missing {missing}")
 
     buffer.release()
 

@@ -86,6 +86,8 @@ class CameraPipelineConfig:
   sync_threshold_msec:float = 10
   timeout_msec:float = 2.0
 
+  resync_offset_sec:float = 600.0 # 10 minutes
+
   device:str = 'cuda'
 
   parameters: ImageSettings

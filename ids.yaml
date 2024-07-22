@@ -1,0 +1,66 @@
+backend: ids_peak
+
+camera_serials:
+  cam1: 4108696498  
+  cam2: 4108696506 
+  cam3: 4108696502 
+  cam4: 4108696499 
+  cam5: 4108703415 
+  cam6: 4108703416 
+
+master: None
+
+
+reset_cycle: False
+device: cuda:0
+
+sync_threshold_msec: 10   # threshold to consider images from the same trigger
+timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
+
+# general parameters which can be changed at runtime
+parameters:  
+  # camera parameters
+  exposure: 2000
+  gain: 0
+  framerate: 5.0
+
+  # output parameters
+  jpeg_quality: 96
+  resize_width: 0
+  preview_size: 200
+
+  # Tonemapping parameters
+  tone_gamma: 1.0
+  tone_intensity : 2.0
+  light_adapt : 1.0
+  color_adapt : 0.2
+
+  tone_mapping: reinhard  # linear | reinhard
+  moving_average : 0.02   # Moving average to smooth intensity scaling over time
+
+  # rotate_90 rotate_180 rotate_270 transpose flip_horiz flip_vert 
+  transform: rotate_90
+
+camera_settings:
+  device:
+    - PixelFormat: "BayerRG12g24IDS"      # must be first in the list
+    - BlackLevel: 0
+
+  stream:
+    - StreamBufferHandlingMode: OldestFirst
+
+  master:
+  - AcquisitionMode: "Continuous"
+  - TriggerMode: "On"
+  - TriggerSelector: "FrameStart"
+  - TriggerSource: "Software"
+
+  slave:
+    - LineSelector: "Line0"
+    - LineMode: "Input"
+    - TriggerSelector: "FrameStart"
+    - TriggerMode: "On"
+    - TriggerSource: "Line0"
+    - TriggerActivation: "RisingEdge"
+    # - TriggerOverlap: "ReadOut"
+

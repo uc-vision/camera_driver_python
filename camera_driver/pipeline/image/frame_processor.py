@@ -1,6 +1,7 @@
 
 from logging import Logger
 from beartype.typing import Dict, List, Tuple
+from camera_driver.driver.interface import CameraInfo
 import torch
 
 from pydispatch import Dispatcher
@@ -12,7 +13,7 @@ from camera_driver.pipeline.config import ImageSettings, ToneMapper, Transform
 from camera_driver.data import BayerPattern, bayer_pattern, encoding_bits
 
 from .image_outputs import ImageOutputs
-from .camera_image import CameraImage, CameraInfo
+from .camera_image import CameraImage
 
 from taichi_image import camera_isp, interpolate, bayer, packed
 
@@ -23,14 +24,14 @@ class FrameProcessor(Dispatcher):
   _events_ = ["on_frame"]
 
   @beartype
-  def __init__(self, cameras:Dict[str, CameraInfo], settings:ImageSettings, logger:Logger, device:torch.device):
+  def __init__(self, cameras:Dict[str, CameraInfo], settings:ImageSettings, logger:Logger, device:torch.device, num_workers:int=4, max_size:int=4):
     self.settings = settings
     self.cameras = cameras
     self.logger = logger
     self.device = device
 
     self.queue = WorkQueue("frame_processor", run=self.process_worker, 
-                           logger=logger, num_workers=4, max_size=4)
+                           logger=logger, num_workers=num_workers, max_size=max_size)
 
     self.processor = TaichiQueue.run_sync(self._init_processor, cameras)
     self.queue.start()

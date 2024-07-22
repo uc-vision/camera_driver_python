@@ -49,6 +49,9 @@ class ImageOutputs(object):
                           input_format=Jpeg.RGBI).numpy().tobytes()
   
       
+  @property
+  def camera_name(self) -> str:
+    return self.raw.camera_name
 
   @cached_property
   def compressed(self) -> bytes:    

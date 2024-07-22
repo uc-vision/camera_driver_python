@@ -1,5 +1,6 @@
 
 from logging import Logger
+from multiprocessing.pool import ThreadPool
 from typing import Dict, Optional
 from beartype import beartype
 from beartype.typing import Set
@@ -44,7 +45,8 @@ class Manager(interface.Manager):
       devices = self.devices
       self.devices = {}
 
-      for serial, desc in devices.items():
+      def reset_camera(desc:ids_peak.DeviceDescriptor):
+        serial = desc.SerialNumber()
         self.logger.info(f"Resetting camera {serial}")
 
         device =  desc.OpenDevice(ids_peak.DeviceAccessType_Control)
@@ -54,6 +56,12 @@ class Manager(interface.Manager):
         node.Execute()
         node.WaitUntilDone()
 
+      # with ThreadPool(len(camera_set)) as pool:
+      #   pool.map(reset_camera, devices.values(), chunksize=1)
+      for desc in devices.values():
+        reset_camera(desc)
+
+      
       self.device_manager.Update()
 
 
@@ -69,7 +77,8 @@ class Manager(interface.Manager):
       by_serial = {serial:k for k, serial in cameras.items()}
       self.logger.info(f"Waiting for cameras {by_serial}")
 
-      while set(self.devices.keys())  < set(cameras.values()):
+      while len(missing:=set(cameras.values()) - set(self.devices.keys())) > 0:
+        self.logger.debug(f"Waiting for cameras {missing}")
         self.device_manager.Update()
 
       return {name:self.init_camera(name, serial) for name, serial in cameras.items()}

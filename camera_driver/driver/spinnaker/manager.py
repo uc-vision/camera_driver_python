@@ -1,5 +1,7 @@
 
 from logging import Logger
+from multiprocessing.pool import ThreadPool
+import threading
 from beartype.typing import Dict, Set
 
 from queue import Queue
@@ -69,10 +71,10 @@ class Manager(interface.Manager):
       cameras = self._devices()
       self.logger.info(f"Resetting {len(cameras)} cameras...")
 
-      for k, camera in cameras.items():
-        self.logger.info(f"Resetting {k}")
-        helpers.reset_camera(camera)
-      
+      with ThreadPool(len(cameras)) as pool:
+        pool.map(helpers.reset_camera, cameras.values())
+
+    
       self.logger.info("Done.")
 
 

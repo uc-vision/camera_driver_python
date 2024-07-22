@@ -192,10 +192,7 @@ def trigger(camera: PySpin.Camera):
 
 
 
-def dict_item(d:Dict):
-    k = next(iter(d)) # setting.keys()[0]
-    v = d[k]
-    return k, v
+
 
 
 def get_camera_serial(cam : PySpin.Camera):

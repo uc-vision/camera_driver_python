@@ -10,11 +10,11 @@ from pydispatch import Dispatcher
 
 from camera_driver.camera_group.camera_set import CameraSet
 from camera_driver.camera_group.sync_handler import SyncHandler, TimeQuery
-from camera_driver.camera_group.initializer import Initialiser, SyncHandlerWithInit
-from camera_driver.driver.interface import Buffer, Camera
+from camera_driver.camera_group.initializer import Initialiser
+from camera_driver.driver.interface import Buffer
 
 from .config import CameraPipelineConfig, ImageSettings
-from .image.camera_image import CameraImage, CameraInfo
+from .image.camera_image import CameraImage
 from .image.frame_processor import FrameProcessor
 from .image.image_outputs import ImageOutputs
 
@@ -45,19 +45,6 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
     
   return cameras, manager
 
-def get_camera_info(name:str, camera:Camera):
-  t, t_max = camera.throughput_mb
-
-  return CameraInfo(
-    name=name,
-    serial=camera.serial,
-    image_size=camera.image_size,
-    encoding=camera.encoding,
-
-    model=camera.model,
-    throughput_mb=(t, t_max)
-  )
-
 
 class CameraPipeline(Dispatcher):
   _events_ = ["on_image_set", "on_stopped", "on_settings"]
@@ -70,8 +57,6 @@ class CameraPipeline(Dispatcher):
     self.config = config
     self.query_time = query_time
 
-    self.start_time_sec = query_time()
-
     cameras, manager = cameras_from_config(config, logger)
     self.camera_set = CameraSet(cameras, logger, master=config.master)
 
@@ -79,7 +64,7 @@ class CameraPipeline(Dispatcher):
     self.manager = manager
     self.logger = logger
 
-    self.camera_info = {name:get_camera_info(name, camera) for name, camera in cameras.items()}
+    self.camera_info = {name:camera.camera_info() for name, camera in cameras.items()}
 
     for info in self.camera_info.values():
       logger.info(str(info))
@@ -127,13 +112,7 @@ class CameraPipeline(Dispatcher):
 
       return offsets
 
-  def start(self):
-    if self.is_started:
-      self.logger.info("Camera pipeline already started")
-      return 
-
-    self.logger.info("Starting camera pipeline")
-
+  def create_sync(self):
     if self.camera_set.has_latching():
       timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
     else:
@@ -152,6 +131,21 @@ class CameraPipeline(Dispatcher):
 
     self.camera_set.bind(on_buffer=self.sync_handler.push_image)
     self.sync_handler.bind(on_group=self.processor.process_image_set)
+
+    
+
+
+
+  def start(self):
+    if self.is_started:
+      self.logger.info("Camera pipeline already started")
+      return 
+
+    self.logger.info("Starting camera pipeline")
+
+    resync_time = self.query_time() - self.config.resync_offset_sec
+    if self.sync_handler is None or self.sync_handler.most_recent_frame < resync_time:
+      self.create_sync()
 
 
     self.camera_set.start()
@@ -173,11 +167,10 @@ class CameraPipeline(Dispatcher):
     self.camera_set.unbind(self.sync_handler.push_image)
 
     self.sync_handler.flush()
-    self.sync_handler = None
 
     self.camera_set.stop()
-    self.emit("on_stopped")
     self.logger.info("Stopped camera pipeline")
+    self.emit("on_stopped")
 
 
   def release(self):

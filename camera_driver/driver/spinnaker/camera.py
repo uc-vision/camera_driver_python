@@ -109,8 +109,6 @@ class Camera(interface.Camera):
     self._set_settings(self.nodemap, self.presets['device'])
     self._set_settings(self.nodemap, self.presets[mode])
 
-  
-  
 
 
   def _set_settings(self, nodemap, config:Dict[str, Dict]):

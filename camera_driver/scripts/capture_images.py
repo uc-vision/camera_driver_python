@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 from queue import Queue
 from beartype.typing import Dict, Tuple
+from camera_driver.pipeline.unsync_pipeline import CameraPipelineUnsync
 from omegaconf import OmegaConf
 import cv2
 
@@ -68,6 +69,8 @@ def main():
 
   parser.add_argument("--write", type=str)
   parser.add_argument("--show", action="store_true")
+  parser.add_argument("--no_sync", action="store_true")
+
   args = parser.parse_args()
 
   config = CameraPipelineConfig.load_yaml(*args.config)
@@ -77,7 +80,10 @@ def main():
   def get_timestamp():
     return datetime.now().timestamp()
   
-  pipeline = CameraPipeline(config, logger, query_time=get_timestamp)
+  if args.no_sync:
+    pipeline = CameraPipelineUnsync(config, logger, query_time=get_timestamp)
+  else:
+    pipeline = CameraPipeline(config, logger, query_time=get_timestamp)
 
   if args.write:
     writer = ImageWriter(args.write, num_cameras=len(config.cameras))

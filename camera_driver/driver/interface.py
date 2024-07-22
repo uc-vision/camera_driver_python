@@ -25,6 +25,7 @@ class CameraProperties:
   framerate: float
 
 SettingList = List[Dict]
+Presets = Dict[str, SettingList]
 
 class Buffer(metaclass=abc.ABCMeta):
 
@@ -141,12 +142,12 @@ class Manager(metaclass=abc.ABCMeta):
 class BackendType(Enum):
 
 
-  peak = "peak"
+  ids_peak = "ids_peak"
   spinnaker = "spinnaker"
 
   def create(self, presets:Dict[SettingList], logger:logging.Logger) -> Manager:
     match self:
-      case BackendType.peak:
+      case BackendType.ids_peak:
 
         if importlib.util.find_spec("ids_peak") is None:
           raise ImportError("Please install the IDS Peak SDK and ids_peak python package.")
