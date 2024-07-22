@@ -42,8 +42,7 @@ class Manager(interface.Manager):
         camera_set = self.camera_serials()
 
       assert camera_set <= self.camera_serials(), f"reset_cameras: camera(s) not found {camera_set - self.camera_serials()}"      
-      devices = self.devices
-      self.devices = {}
+      devices = {serial:self.devices[serial] for serial in camera_set}
 
       def reset_camera(desc:ids_peak.DeviceDescriptor):
         serial = desc.SerialNumber()
@@ -58,10 +57,10 @@ class Manager(interface.Manager):
 
       # with ThreadPool(len(camera_set)) as pool:
       #   pool.map(reset_camera, devices.values(), chunksize=1)
-      for desc in devices.values():
-        reset_camera(desc)
+      for k, v in devices.items():
+        reset_camera(v)
+        del self.devices[k]
 
-      
       self.device_manager.Update()
 
 

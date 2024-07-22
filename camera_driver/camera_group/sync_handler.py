@@ -21,14 +21,13 @@ class SyncHandler(Dispatcher):
   _events_ = ["on_group"]
 
   @beartype
-  def __init__(self, camera_set:Set[str], 
+  def __init__(self, time_offsets:Dict[str, float],
           sync_threshold:float, 
           sync_timeout:float, 
 
           process_buffer:ProcessBuffer,
           query_time:TimeQuery,  
 
-          time_offsets:Optional[Dict[str, float]],
           logger:logging.Logger):
     
     
@@ -38,9 +37,9 @@ class SyncHandler(Dispatcher):
 
     self.process_buffer = process_buffer
 
-    self.camera_set = camera_set
+    self.camera_set = set(time_offsets.keys())
 
-    self.grouper = FrameGrouper(time_offsets, sync_timeout, sync_threshold)
+    self.grouper = FrameGrouper(time_offsets, sync_threshold)
     self.work_queue = WorkQueue("sync_handler", self._process_worker, 
                                 logger=logger, num_workers=1, max_size=self.num_cameras)
     
@@ -51,7 +50,7 @@ class SyncHandler(Dispatcher):
     
   @property
   def num_cameras(self):
-    return self.camera_set.num_cameras
+    return len(self.camera_set)
   
 
   def push_image(self, buffer:Buffer):

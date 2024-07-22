@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import datetime
 import logging
 from typing import Set
 from beartype.typing import Dict
@@ -32,7 +33,7 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
     raise ValueError(f"Camera(s) not found: {missing}")
 
   if config.reset_cycle is True:
-    manager.reset_cameras(manager.camera_serials())
+    manager.reset_cameras(set(config.camera_serials.values()))
     cameras = manager.wait_for_cameras(config.camera_serials)
 
   else:
@@ -103,10 +104,10 @@ class CameraPipeline(Dispatcher):
       self.camera_set.bind(on_buffer=init.push_image)
       self.camera_set.start()
 
-      offsets = wait_for(init, 'initialized', self.config.self.config.init_timeout / 1000.)
+      offsets = wait_for(init, 'initialized', self.config.init_timeout_msec / 1000.)
       self.camera_set.unbind(init.push_image)
 
-      self.camera_set.stop()
+      # self.camera_set.stop()
 
       if offsets is None:
         raise RuntimeError(f"Failed to initialize camera offsets, recieved: {init.frame_counts()}")
@@ -114,13 +115,17 @@ class CameraPipeline(Dispatcher):
       return offsets
 
   def create_sync(self):
-    if self.camera_set.has_latching():
+    has_latching = all([info.has_latching for info in self.camera_info.values()])
+
+    if has_latching:
       timestamp_offsets = self.camera_set.compute_clock_offsets(self.query_time)
     else:
       timestamp_offsets = self.initialize_offsets()
 
+    now = self.query_time()
     for camera, offset in timestamp_offsets.items():
-      self.logger.info(f"Camera {camera} offset {offset - self.start_time_sec:.4f}")
+      date = datetime.fromtimestamp(now - offset)
+      self.logger.info(f"Camera {camera} clocks {date.strftime('%M:%S.%f')}")
 
     self.sync_handler = SyncHandler(time_offsets=timestamp_offsets,
                                     sync_threshold=self.config.sync_threshold_msec / 1000.,
@@ -148,8 +153,8 @@ class CameraPipeline(Dispatcher):
     if self.sync_handler is None or self.sync_handler.most_recent_frame < resync_time:
       self.create_sync()
 
-
-    self.camera_set.start()
+    if not self.camera_set.is_started:
+      self.camera_set.start()
     self.logger.info("Started camera pipeline")
 
     

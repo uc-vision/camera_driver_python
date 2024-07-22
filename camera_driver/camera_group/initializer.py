@@ -43,7 +43,7 @@ class Initialiser(Dispatcher):
       return
       
     offsets = {k:np.median([offset.clock_time_sec - offset.timestamp_sec for offset in offsets])
-                for k, offsets in self.timestamps}
+                for k, offsets in self.timestamps.items()}
 
     groups:List[FrameGroup] = []
 
@@ -54,9 +54,10 @@ class Initialiser(Dispatcher):
         if group is not None:
           groups.append(group)
 
+    group_offsets = [group.time_offsets for group in groups]
 
-    mean_offsets = {k: offsets[k] + np.mean(offsets) for k, offsets in 
-                    transpose_dicts_list(group.time_offsets).items()}
+    mean_offsets = {k: offsets[k] + np.mean(cam_offsets) for k, cam_offsets in 
+                    transpose_dicts_list(group_offsets).items()}
 
     return mean_offsets
     
@@ -79,6 +80,8 @@ class Initialiser(Dispatcher):
     stamps.append(
       Timestamped(buffer.timestamp_sec, now, buffer.camera_name))
     
+    buffer.release()
+
     offsets = self.try_initialise() 
     if offsets is not None:
       self.emit("initialized", offsets)

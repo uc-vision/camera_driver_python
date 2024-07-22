@@ -109,8 +109,7 @@ def main():
     else:
       
       recieved = {k:deque(maxlen=20) for k in pipeline.camera_info.keys()}
-      
-
+      time = get_timestamp()
       while True:
         image_group:Dict[str, ImageOutputs] = queue.get()
         for k, image in image_group.items():
@@ -121,7 +120,9 @@ def main():
           return f"{rate:.2f}"
         
         rates = {k:format_rate(times) for k, times in recieved.items()}
-        print(rates, end='\r')
+        if get_timestamp() - time > 2:
+          logger.info(rates)
+          time = get_timestamp()
 
 
 

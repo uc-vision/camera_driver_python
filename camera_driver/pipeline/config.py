@@ -82,9 +82,11 @@ class CameraPipelineConfig:
   master:Optional[str] 
   reset_cycle:bool = True
 
-  init_window:int = 10
-  sync_threshold_msec:float = 10
-  timeout_msec:float = 2.0
+  sync_threshold_msec:float = 10.0
+  timeout_msec:float = 2000.0
+
+  init_window:int = 5
+  init_timeout_msec:float = 1000.0
 
   resync_offset_sec:float = 600.0 # 10 minutes
 

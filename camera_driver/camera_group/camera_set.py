@@ -33,9 +33,9 @@ class CameraSet(Dispatcher):
     return {name:camera.compute_clock_offset(get_timestamp) 
                   for name, camera in self.cameras.items()}
   
-  @property
-  def has_latching(self):
-    return all([camera.has_latching for camera in self.cameras.values()])
+
+  def camera_info(self):
+    return {name:camera.camera_info() for name, camera in self.cameras.items()}
 
   def __repr__(self):
     cameras = ", ".join([f"{name}:{camera.serial}" for name, camera in self.cameras.items()])

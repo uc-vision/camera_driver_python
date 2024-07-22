@@ -2,8 +2,11 @@ from queue import Empty, Queue
 import threading
 from typing import Any, Dict, List
 
+from beartype import beartype
 
+@beartype
 def transpose_dicts_list(dicts:List[Dict[str, Any]]) -> Dict[str, List[Any]]:
+  assert len(dicts) > 0, "transpose_dicts_list: empty list"
 
   keys = dicts[0].keys()
   return {key:[d[key] for d in dicts] for key in keys}
