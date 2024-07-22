@@ -122,9 +122,11 @@ class Camera(interface.Camera):
     self.nodemap.FindNode("PayloadSize").Value()
 
     payload_size = self.nodemap.FindNode("PayloadSize").Value()
-    buffer_count_max = self.data_stream.NumBuffersAnnouncedMinRequired()
+    buffer_count = self.data_stream.NumBuffersAnnouncedMinRequired()
 
-    for _ in range(buffer_count_max):
+    self.log(logging.DEBUG, f"Allocating {buffer_count} buffers of size {payload_size/1e6:.1f}MB")
+
+    for _ in range(buffer_count):
       buffer = self.data_stream.AllocAndAnnounceBuffer(payload_size)
       self.data_stream.QueueBuffer(buffer)
 
@@ -140,7 +142,10 @@ class Camera(interface.Camera):
 
   def _capture_thread(self):
     while self.started:
-      raw_buffer = self.data_stream.WaitForFinishedBuffer(ids_peak.DataStream.INFINITE_NUMBER)  
+      try:
+        raw_buffer = self.data_stream.WaitForFinishedBuffer(ids_peak.DataStream.INFINITE_NUMBER)  
+      except ids_peak.AbortedException:
+        break
 
       if raw_buffer.IsIncomplete():
         self.log(logging.WARNING, "Recieved incomplete buffer")
@@ -151,10 +156,6 @@ class Camera(interface.Camera):
 
   def log(self, level:int, message:str):
     self.logger.log(level, f"{self.name}:{message}")
-
-  def update_settings(self, settings:interface.CameraProperties):
-    raise NotImplementedError() # TODO
-
 
     
   def start(self):

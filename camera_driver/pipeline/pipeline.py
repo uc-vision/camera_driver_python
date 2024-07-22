@@ -39,9 +39,6 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
     cameras = {name:manager.init_camera(name, serial)
             for name, serial in config.camera_serials.items()}
 
-  for k, camera in cameras.items():
-    camera.setup_mode("master" if k == config.master else "slave")
-    camera.update_properties(config.parameters.camera_properties)
     
   return cameras, manager
 
@@ -58,6 +55,10 @@ class CameraPipeline(Dispatcher):
     self.query_time = query_time
 
     cameras, manager = cameras_from_config(config, logger)
+    for k, camera in cameras.items():
+      camera.setup_mode("master" if k == config.master else "slave")
+      camera.update_properties(config.parameters.camera_properties)
+
     self.camera_set = CameraSet(cameras, logger, master=config.master)
 
     self.sync_handler = None

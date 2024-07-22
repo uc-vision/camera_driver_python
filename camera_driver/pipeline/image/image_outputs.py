@@ -52,6 +52,10 @@ class ImageOutputs(object):
   @property
   def camera_name(self) -> str:
     return self.raw.camera_name
+  
+  @property
+  def timestamp_sec(self) -> float:
+    return self.raw.timestamp_sec 
 
   @cached_property
   def compressed(self) -> bytes:    

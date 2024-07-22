@@ -2,6 +2,7 @@ from dataclasses import replace
 import logging
 from beartype.typing import Dict
 
+from camera_driver.concurrent.work_queue import WorkQueue
 from camera_driver.pipeline.pipeline import cameras_from_config
 import torch
 from beartype import beartype
@@ -21,7 +22,7 @@ from camera_driver.concurrent.taichi_queue import TaichiQueue
 
 
 class CameraPipelineUnsync(Dispatcher):
-  _events_ = ["on_image", "on_stopped", "on_settings"]
+  _events_ = ["on_image", "on_image_set", "on_stopped", "on_settings"]
 
   @beartype
   def __init__(self, config:CameraPipelineConfig, 
@@ -32,17 +33,24 @@ class CameraPipelineUnsync(Dispatcher):
     self.query_time = query_time
 
     cameras, manager = cameras_from_config(config, logger)
+    for k, camera in cameras.items():
+      camera.setup_mode("master")
+      camera.update_properties(config.parameters.camera_properties)
+
     self.camera_set = CameraSet(cameras, logger, master=config.master)
 
     self.manager = manager
     self.logger = logger
 
     self.device = torch.device(config.device)
-
     self.camera_info = {name:camera.camera_info() for name, camera in cameras.items()}
 
     for info in self.camera_info.values():
       logger.info(str(info))
+
+    self.work_queue = WorkQueue("buffer_handler", self._process_buffer, 
+                                logger=logger, num_workers=1)
+    self.work_queue.start()
 
   
     def frame_processor(k):
@@ -57,15 +65,17 @@ class CameraPipelineUnsync(Dispatcher):
   def _on_image(self, group:Dict[str, ImageOutputs]):
     outputs = list(group.values())[0]
     self.emit("on_image", outputs)
+    self.emit("on_image_set", group)
   
 
   def _process_buffer(self, buffer:Buffer):
     now = self.query_time()
-    return CameraImage.from_buffer(buffer, now, self.device)
+    image = CameraImage.from_buffer(buffer, now, self.device)
+    buffer.release()
+
+    k = image.camera_name
+    self.processors[k].process_image_set({k:image})
   
-  def _process_image(self, camera_image:CameraImage):
-    k = camera_image.camera_name
-    self.processors[k].process_image_set({k:camera_image})
 
 
   def update_settings(self, image_settings:ImageSettings):
@@ -87,7 +97,7 @@ class CameraPipelineUnsync(Dispatcher):
 
     self.logger.info("Starting camera pipeline")
     
-    self.camera_set.bind(on_buffer=self._process_image)  
+    self.camera_set.bind(on_buffer=self.work_queue.enqueue)  
     self.camera_set.start()
 
     self.logger.info("Started camera pipeline")
@@ -105,6 +115,8 @@ class CameraPipelineUnsync(Dispatcher):
     self.logger.info("Stopping camera pipeline")
 
     self.camera_set.unbind_cameras()
+
+    self.work_queue.stop()
     self.camera_set.stop()
 
     self.logger.info("Stopped camera pipeline")
@@ -112,7 +124,8 @@ class CameraPipelineUnsync(Dispatcher):
 
 
   def release(self):
-    self.stop()
+    if self.is_started:
+      self.stop()
 
     for processor in self.processors.values():
       processor.stop()

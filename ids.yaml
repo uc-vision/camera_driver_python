@@ -1,5 +1,6 @@
 backend: ids_peak
 
+
 camera_serials:
   cam1: 4108696498  
   cam2: 4108696506 
@@ -8,8 +9,15 @@ camera_serials:
   cam5: 4108703415 
   cam6: 4108703416 
 
-master: None
+  cam7: 4108696503
+  cam8: 4108696505
+  cam9: 4108696501
+  cam10: 4108696504
+  cam11: 4108705789
+  cam12: 4108696507
 
+
+master: None
 
 reset_cycle: False
 device: cuda:0
@@ -22,7 +30,7 @@ parameters:
   # camera parameters
   exposure: 2000
   gain: 0
-  framerate: 5.0
+  framerate: 19.0
 
   # output parameters
   jpeg_quality: 96
@@ -51,9 +59,11 @@ camera_settings:
 
   master:
   - AcquisitionMode: "Continuous"
-  - TriggerMode: "On"
-  - TriggerSelector: "FrameStart"
-  - TriggerSource: "Software"
+  - TriggerMode: "Off"
+  - AcquisitionFrameRate: 19
+  # - TriggerMode: "On"
+  # - TriggerSelector: "FrameStart"
+  # - TriggerSource: "Software"
 
   slave:
     - LineSelector: "Line0"

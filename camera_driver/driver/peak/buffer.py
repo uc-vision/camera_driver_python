@@ -1,3 +1,4 @@
+from functools import cached_property
 from beartype.typing import Tuple
 
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
@@ -6,6 +7,7 @@ from camera_driver.driver import interface
 
 from ids_peak import ids_peak
 from ids_peak import ids_peak_ipl_extension
+from ids_peak_ipl import ids_peak_ipl
 
 import numpy as np
 
@@ -37,10 +39,10 @@ class Buffer(interface.Buffer):
 
   @property
   def encoding(self) -> ImageEncoding:
-    return camera_encodings[self._buffer.PixelFormat().Name()]
+    format = ids_peak_ipl.PixelFormat(self._buffer.PixelFormat())
+    return camera_encodings[format.Name()]
 
   
-
   def release(self):
     self._buffer.ParentDataStream().QueueBuffer(self._buffer)
     del self._buffer

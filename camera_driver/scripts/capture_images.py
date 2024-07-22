@@ -1,8 +1,10 @@
 
+from collections import deque
 from datetime import datetime
 import logging
 from pathlib import Path
 from queue import Queue
+import traceback
 from beartype.typing import Dict, Tuple
 from camera_driver.pipeline.unsync_pipeline import CameraPipelineUnsync
 from omegaconf import OmegaConf
@@ -105,11 +107,26 @@ def main():
       view_images(queue, pipeline.camera_info)
 
     else:
+      
+      recieved = {k:deque(maxlen=20) for k in pipeline.camera_info.keys()}
+      
 
       while True:
-        image_group = queue.get()
-        print(image_group)  
+        image_group:Dict[str, ImageOutputs] = queue.get()
+        for k, image in image_group.items():
+          recieved[k].append(image.timestamp_sec)
 
+        def format_rate(times):
+          rate = 0.0 if len(times) < 2 else (len(times) - 1) / (times[-1] - times[0])
+          return f"{rate:.2f}"
+        
+        rates = {k:format_rate(times) for k, times in recieved.items()}
+        print(rates, end='\r')
+
+
+
+  except Exception as e:
+    logger.error(traceback.format_exc())
 
   finally:
     pipeline.stop()
