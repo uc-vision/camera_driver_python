@@ -7,14 +7,14 @@ camera_serials:
   cam3: 4108696502 
   cam4: 4108696499 
   cam5: 4108703415 
-  # cam6: 4108703416 
+  cam6: 4108703416 
 
-  # cam7: 4108696503
-  # cam8: 4108696505
-  # cam9: 4108696501
-  # cam10: 4108696504
-  # cam11: 4108705789
-  # cam12: 4108696507
+  cam7: 4108696503
+  cam8: 4108696505
+  cam9: 4108696501
+  cam10: 4108696504
+  cam11: 4108705789
+  cam12: 4108696507
 
 
 master: None
@@ -22,10 +22,10 @@ master: None
 reset_cycle: True
 device: cuda:0
 
-sync_threshold_msec: 2   # threshold to consider images from the same trigger
+sync_threshold_msec: 5   # threshold to consider images from the same trigger
 timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
 
-init_window: 10
+init_window: 15
 init_timeout_msec: 2000
 
 # general parameters which can be changed at runtime
