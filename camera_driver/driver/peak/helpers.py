@@ -14,13 +14,18 @@ def find_node(nodemap:ids_peak.NodeMap, node_name:str):
 def node_value(nodemap:ids_peak.NodeMap, node_name:str):
   node = get_readable(nodemap, node_name)
 
-  if ((node.AccessStatus() & ids_peak.NodeAccessStatus_ReadOnly) == 0):
-    raise NodeException(f"Node {node_name} is not readable")
-
   if node.Type() == ids_peak.NodeType_Enumeration:
     return node.CurrentEntry().DisplayName()
   else:
     return node.Value()
+  
+def is_readable(nodemap:ids_peak.NodeMap, node_name:str):
+  node = nodemap.FindNode(node_name)
+  return node is not None and (node.AccessStatus() in [ids_peak.NodeAccessStatus_ReadOnly, ids_peak.NodeAccessStatus_ReadWrite])
+
+def is_writable(nodemap:ids_peak.NodeMap, node_name:str):
+  node = nodemap.FindNode(node_name)
+  return node is not None and (node.AccessStatus() in [ids_peak.NodeAccessStatus_WriteOnly, ids_peak.NodeAccessStatus_ReadWrite])
 
 def get_writable(nodemap:ids_peak.NodeMap, node_name:str):
   node = find_node(nodemap, node_name)

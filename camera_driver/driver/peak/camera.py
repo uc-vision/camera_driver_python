@@ -62,8 +62,11 @@ class Camera(interface.Camera):
           self.log(logging.WARNING, f"Failed to set {setting_name} to {value}: {e}")
 
   def update_properties(self, settings: interface.CameraProperties):
-    raise NotImplementedError() # TODO
+    if helpers.is_writable(self.nodemap, "AcquisitionFrameRate"):
+      helpers.set_value(self.nodemap, "AcquisitionFrameRate", settings.framerate)
 
+    helpers.set_value(self.nodemap, "Gain", max(1.0, settings.gain))
+    helpers.set_value(self.nodemap, "ExposureTime", int(settings.exposure))
 
   def camera_info(self) -> interface.CameraInfo:
     return interface.CameraInfo(
@@ -88,6 +91,9 @@ class Camera(interface.Camera):
 
     return (t / 1e6, t_max / 1e6)
   
+
+  def node_value(self, name:str):
+    return helpers.node_value(self.nodemap, name)
 
 
   @property
