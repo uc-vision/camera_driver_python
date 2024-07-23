@@ -82,4 +82,4 @@ class ImageOutputs(object):
       else:
         return self.calibration
     else:
-      return Camera((width, height), intrinsic=np.zeros(3, 3))
+      return Camera((width, height), intrinsic=np.zeros((3, 3)))
