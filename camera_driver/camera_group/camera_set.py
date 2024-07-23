@@ -28,8 +28,6 @@ class CameraSet(Dispatcher):
 
   @beartype
   def compute_clock_offsets(self, get_timestamp:TimeQuery):
-    assert self.has_latching, "Cannot compute clock offsets without timestamp latch support"
-
     return {name:camera.compute_clock_offset(get_timestamp) 
                   for name, camera in self.cameras.items()}
   

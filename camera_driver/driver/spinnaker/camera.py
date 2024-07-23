@@ -7,6 +7,7 @@ from beartype.typing import  Callable, Dict, List
 import PySpin
 
 from beartype import beartype
+from camera_driver.data.util import dict_item
 import numpy as np
 
 from camera_driver.data.encoding import ImageEncoding, camera_encodings
@@ -113,7 +114,7 @@ class Camera(interface.Camera):
 
   def _set_settings(self, nodemap, config:Dict[str, Dict]):
     for setting in config:
-        setting_name, value = helpers.dict_item(setting)
+        setting_name, value = dict_item(setting)
         self.log(logging.DEBUG, f"Setting {setting_name} to {value}")
 
         try:
