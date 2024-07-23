@@ -137,7 +137,6 @@ class Camera(interface.Camera):
         self.log(logging.ERROR, f"Error handling image: {traceback.format_exc()}")
 
 
-
   def update_properties(self, settings:interface.CameraProperties):
     
     if helpers.is_writable(self.nodemap, "AcquisitionFrameRate"):

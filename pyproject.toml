@@ -13,7 +13,7 @@ maintainers = [
 dependencies = [
   "beartype",
   "python-dispatch",
-  "nvjpeg-torch>=0.1.0",
+  "nvjpeg-torch>=1.0",
   "taichi_image",
   "taichi",
   "disable_gc",

@@ -54,8 +54,9 @@ parameters:
 
 camera_settings:
   device:
-    - PixelFormat: "BayerRG12g24IDS"      # must be first in the list
+    - PixelFormat: "BayerRG12g24IDS"    
     - BlackLevel: 0
+#    - DeviceLinkThroughputLimit: 200000000
 
   stream:
     - StreamBufferHandlingMode: OldestFirst
@@ -63,8 +64,7 @@ camera_settings:
   master:
   - AcquisitionMode: "Continuous"
   - TriggerMode: "Off"
-  - AcquisitionFrameRate: 19
-  # - TriggerMode: "On"
+    # - TriggerMode: "On"
   # - TriggerSelector: "FrameStart"
   # - TriggerSource: "Software"
 

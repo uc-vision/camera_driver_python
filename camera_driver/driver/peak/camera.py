@@ -23,11 +23,9 @@ class Camera(interface.Camera):
     self.device = device
 
     self.nodemap = device.RemoteDevice().NodeMaps()[0]
-    self.data_stream = device.DataStreams()[0].OpenDataStream()
+    self.data_stream = None
 
-    self.stream_nodemap = self.data_stream.NodeMaps()[0]
     self.logger = logger
-
 
     self.capture_thread:Optional[Thread] = None
     self.started = False
@@ -46,12 +44,12 @@ class Camera(interface.Camera):
     helpers.set_value(self.nodemap, "UserSetSelector", "Default")
     helpers.execute_wait(self.nodemap, "UserSetLoad")
 
-    self._set_settings(self.stream_nodemap, self.presets['stream'])
     self._set_settings(self.nodemap, self.presets['device'])
     self._set_settings(self.nodemap, self.presets[mode])
 
   
   def _set_settings(self, nodemap, config:Dict[str, Dict]):
+
     for setting in config:
         setting_name, value = dict_item(setting)
         self.log(logging.DEBUG, f"Setting {setting_name} to {value}")
@@ -64,6 +62,8 @@ class Camera(interface.Camera):
   def update_properties(self, settings: interface.CameraProperties):
     if helpers.is_writable(self.nodemap, "AcquisitionFrameRate"):
       helpers.set_value(self.nodemap, "AcquisitionFrameRate", settings.framerate)
+
+
 
     helpers.set_value(self.nodemap, "Gain", max(1.0, settings.gain))
     helpers.set_value(self.nodemap, "ExposureTime", int(settings.exposure))
@@ -88,6 +88,7 @@ class Camera(interface.Camera):
   def throughput_mb(self) -> Tuple[float, float]:
     t = self.node_value("DeviceLinkCurrentThroughput")
     t_max = self.node_value("DeviceLinkThroughputLimit")
+    
 
     return (t / 1e6, t_max / 1e6)
   
@@ -149,6 +150,7 @@ class Camera(interface.Camera):
 
       if raw_buffer.IsIncomplete():
         self.log(logging.WARNING, "Recieved incomplete buffer")
+        raw_buffer.ParentDataStream().QueueBuffer(raw_buffer)
         continue  
             
       buffer = Buffer(self.name, raw_buffer)
@@ -160,6 +162,11 @@ class Camera(interface.Camera):
     
   def start(self):
     self.log(logging.INFO, "Starting camera capture...")
+
+    self.data_stream = self.device.DataStreams()[0].OpenDataStream()
+    stream_nodemap = self.data_stream.NodeMaps()[0]
+    self._set_settings(stream_nodemap, self.presets['stream'])
+
     self._setup_buffers()
 
     self.capture_thread = Thread(target=self._capture_thread)
@@ -190,7 +197,8 @@ class Camera(interface.Camera):
     self.capture_thread = None
 
     self._flush_buffers()
-
+    self.data_stream = None
+    
     self.log(logging.INFO, "stopped.")
     self.emit("on_started", False)
 
