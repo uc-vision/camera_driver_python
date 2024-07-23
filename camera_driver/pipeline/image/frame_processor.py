@@ -1,4 +1,5 @@
 
+from functools import partial
 from logging import Logger
 from beartype.typing import Dict, List, Tuple
 from camera_driver.driver.interface import CameraInfo
@@ -118,7 +119,7 @@ class FrameProcessor(Dispatcher):
     if self.encoding_type == EncodingType.Packed12:
       load_data = self.isp.load_packed12
     elif self.encoding_type == EncodingType.Packed12_IDS:
-      load_data = self.isp.load_packed12_ids      
+      load_data = partial(self.isp.load_packed12, ids_format=True)
     elif self.encoding_type == EncodingType.Packed16:
       load_data = self.isp.load_packed16
 
