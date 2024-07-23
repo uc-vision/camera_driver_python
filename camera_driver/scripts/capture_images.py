@@ -2,11 +2,14 @@
 from collections import deque
 from datetime import datetime
 import logging
+import math
 from pathlib import Path
 from queue import Queue
 import traceback
+from typing import List
 from beartype.typing import Dict, Tuple
 from camera_driver.pipeline.unsync_pipeline import CameraPipelineUnsync
+import numpy as np
 from omegaconf import OmegaConf
 import cv2
 
@@ -51,17 +54,56 @@ class ImageWriter():
     self.work_queue.stop()
 
 
-def view_images(queue:Queue, camera_info:Dict[str, CameraInfo]):
-  cv2.namedWindow("image", cv2.WINDOW_NORMAL)
-  cv2.resizeWindow("image", 800, 600)
+class ImageGrid():
+  def __init__(self, camera_sizes:List[Tuple[int, int]]):
+    
+    self.rows = math.ceil(math.sqrt(len(camera_sizes)))
+    self.cols = math.ceil(len(camera_sizes) / self.rows)
+
+    self.cell_size = (max([w for w, h in camera_sizes]), max([h for w, h in camera_sizes]))
+    self.image = np.zeros((self.cell_size[1] * self.rows, self.cell_size[0] * self.cols, 3), dtype=np.uint8)
+  
+  def update(self, idx:int, image:np.ndarray):
+    h, w = image.shape[:2]
+
+    x = (idx % self.cols) * self.cell_size[0]
+    y = (idx // self.cols) * self.cell_size[1]
+
+    self.image[y:y+h, x:x+w, :] = image
+  
+  def image_size(self):
+    return self.image.shape[1], self.image.shape[0]
+  
+
+
+def view_images(queue:Queue, camera_info:Dict[str, CameraInfo], preview_width):
+
+  def resized(image_size):
+    return (preview_width, int(preview_width * image_size[0] / image_size[1]))
+
+  image_sizes = [resized(info.image_size) for info in camera_info.values()]
+  camera_indexes = {k:i for i, k in enumerate(camera_info.keys())}
+
+  grid = ImageGrid(image_sizes)
+
+  cv2.namedWindow("images", cv2.WINDOW_NORMAL)
+  cv2.resizeWindow("images", *grid.image_size())
+  n = 0
+
 
   while True:
     image_group:Dict[str, ImageOutputs] = queue.get()
-    previews = [image_group[k].preview.cpu().numpy() 
-                for k in camera_info.keys()]
+    n = n + len(image_group)
+
+    for (k, image) in image_group.items():
+      preview = image.preview.cpu().numpy()
+      grid.update(camera_indexes[k], cv2.cvtColor(preview, cv2.COLOR_RGB2BGR))
     
-    cv2.imshow("image", cv2.cvtColor(cv2.hconcat(previews), cv2.COLOR_RGB2BGR))
-    cv2.waitKey(1)
+    if n > len(camera_info):
+      cv2.imshow("image", grid.image)
+      cv2.waitKey(1)
+      n = n - len(camera_info)
+
 
 
 def main():
@@ -88,13 +130,13 @@ def main():
     pipeline = CameraPipeline(config, logger, query_time=get_timestamp)
 
   if args.write:
-    writer = ImageWriter(args.write, num_cameras=len(config.cameras))
+    writer = ImageWriter(args.write, num_cameras=len(pipeline.camera_info))
 
     pipeline.bind(on_image_set=writer.write_images)
     pipeline.bind(on_stopped=writer.stop) 
 
 
-  queue = Queue()
+  queue = Queue(len(pipeline.camera_info))
   def on_group(group:Dict[str, ImageOutputs]):
     queue.put(group)
 
@@ -104,7 +146,7 @@ def main():
     pipeline.start()
 
     if args.show:
-      view_images(queue, pipeline.camera_info)
+      view_images(queue, pipeline.camera_info, preview_width=config.parameters.preview_size)
 
     else:
       

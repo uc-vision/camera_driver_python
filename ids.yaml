@@ -9,17 +9,17 @@ camera_serials:
   cam5: 4108703415 
   cam6: 4108703416 
 
-  cam7: 4108696503
-  cam8: 4108696505
-  cam9: 4108696501
-  cam10: 4108696504
-  cam11: 4108705789
-  cam12: 4108696507
+  # cam7: 4108696503
+  # cam8: 4108696505
+  # cam9: 4108696501
+  # cam10: 4108696504
+  # cam11: 4108705789
+  # cam12: 4108696507
 
 
 master: None
 
-reset_cycle: True
+reset_cycle: False
 device: cuda:0
 
 sync_threshold_msec: 5   # threshold to consider images from the same trigger
@@ -31,9 +31,9 @@ init_timeout_msec: 2000
 # general parameters which can be changed at runtime
 parameters:  
   # camera parameters
-  exposure: 2000
+  exposure: 20000
   gain: 0
-  framerate: 19.0
+  framerate: 10.0
 
   # output parameters
   jpeg_quality: 96
@@ -44,7 +44,7 @@ parameters:
   tone_gamma: 1.0
   tone_intensity : 2.0
   light_adapt : 1.0
-  color_adapt : 0.2
+  color_adapt : 0.0
 
   tone_mapping: reinhard  # linear | reinhard
   moving_average : 0.02   # Moving average to smooth intensity scaling over time

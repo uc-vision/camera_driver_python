@@ -10,7 +10,8 @@ from beartype import beartype
 from camera_driver.concurrent.taichi_queue import TaichiQueue
 from camera_driver.concurrent.work_queue import WorkQueue
 from camera_driver.pipeline.config import ImageSettings, ToneMapper, Transform
-from camera_driver.data import BayerPattern, bayer_pattern, encoding_bits
+
+from camera_driver.data import BayerPattern, bayer_pattern, EncodingType, encoding_type
 
 from .image_outputs import ImageOutputs
 from .camera_image import CameraImage
@@ -53,10 +54,10 @@ class FrameProcessor(Dispatcher):
     enc = common_value("encoding", [camera.encoding for camera in cameras.values()])    
     
     self.pattern = bayer_pattern(enc)
-    self.bits = encoding_bits(enc)
+    self.encoding_type = encoding_type(enc)
 
-    if encoding_bits(enc) not in [12, 16]:
-      raise ValueError(f"Unsupported bits {encoding_bits(enc)} in {enc}")
+    if encoding_type(enc) not in [EncodingType.Packed12, EncodingType.Packed12_IDS, EncodingType.Packed16]:
+      raise ValueError(f"Unsupported encoding {encoding_type(enc)} in {enc}")
 
 
     transform = interpolate.ImageTransform(Transform(self.settings.transform).name)
@@ -113,9 +114,16 @@ class FrameProcessor(Dispatcher):
 
   @beartype
   def _process_images(self, images:List[torch.Tensor]):
-    load_data = self.isp.load_packed12 if self.bits == 12 else self.isp.load_packed16
-    images =  [load_data(image) for image in images]
 
+    if self.encoding_type == EncodingType.Packed12:
+      load_data = self.isp.load_packed12
+    elif self.encoding_type == EncodingType.Packed12_IDS:
+      load_data = self.isp.load_packed12_ids      
+    elif self.encoding_type == EncodingType.Packed16:
+      load_data = self.isp.load_packed16
+
+
+    images =  [load_data(image) for image in images]
     settings = self.settings
 
     if settings.tone_mapping == ToneMapper.linear:

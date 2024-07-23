@@ -31,16 +31,23 @@ class ImageEncoding(Enum):
   Bayer_GRBG16 = "bayer_grbg16"
 
 
+class EncodingType(Enum):
+  Packed8 = "packed8"
+  Packed12 = "packed12"
+  Packed12_IDS = "packed12_ids"
+  Packed16 = "packed16"
 
-def encoding_bits(encoding):
+
+
+def encoding_type(encoding):
   if encoding in [ImageEncoding.Bayer_BGGR8, ImageEncoding.Bayer_RGGB8, ImageEncoding.Bayer_GBRG8, ImageEncoding.Bayer_GRBG8]:
-    return 8
+    return EncodingType.Packed8
   elif encoding in [ImageEncoding.Bayer_BGGR12, ImageEncoding.Bayer_RGGB12, ImageEncoding.Bayer_GBRG12, ImageEncoding.Bayer_GRBG12]:
-    return 12
+    return EncodingType.Packed12
   elif encoding in [ImageEncoding.Bayer_RGGB12_IDS, ImageEncoding.Bayer_BGGR12_IDS, ImageEncoding.Bayer_GBRG12_IDS, ImageEncoding.Bayer_GRBG12_IDS]:
-    return 12
+    return EncodingType.Packed12_IDS
   elif encoding in [ImageEncoding.Bayer_BGGR16, ImageEncoding.Bayer_RGGB16, ImageEncoding.Bayer_GBRG16, ImageEncoding.Bayer_GRBG16]:
-    return 16
+    return EncodingType.Packed16
   else:
     raise ValueError(f"Encoding not implemented {encoding}")
 
@@ -59,20 +66,22 @@ def bayer_pattern(encoding):
   
 
 
+
 camera_encodings = dict(
     BayerRG8 = ImageEncoding.Bayer_RGGB8,
     BayerBG8 = ImageEncoding.Bayer_BGGR8,
     BayerGR8 = ImageEncoding.Bayer_GRBG8,
     BayerGB8 = ImageEncoding.Bayer_GBRG8,
+    
     BayerRG12p = ImageEncoding.Bayer_RGGB12,
     BayerBG12p = ImageEncoding.Bayer_BGGR12,
     BayerGR12p = ImageEncoding.Bayer_GRBG12,
     BayerGB12p = ImageEncoding.Bayer_GBRG12,
 
-    BayerRG12g24IDS = ImageEncoding.Bayer_RGGB12,
-    BayerBG12g24IDS = ImageEncoding.Bayer_BGGR12,
-    BayerGR12g24IDS = ImageEncoding.Bayer_GRBG12,
-    BayerGB12g24IDS = ImageEncoding.Bayer_GBRG12,
+    BayerRG12g24IDS = ImageEncoding.Bayer_RGGB12_IDS,
+    BayerBG12g24IDS = ImageEncoding.Bayer_BGGR12_IDS,
+    BayerGR12g24IDS = ImageEncoding.Bayer_GRBG12_IDS,
+    BayerGB12g24IDS = ImageEncoding.Bayer_GBRG12_IDS,
     
 
     BayerRG16 = ImageEncoding.Bayer_RGGB16,
