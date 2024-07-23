@@ -5,6 +5,7 @@ from beartype.typing import  Optional
 from beartype import beartype
 from functools import cached_property
 
+import numpy as np
 from nvjpeg_torch import Jpeg
 
 from camera_geometry import Camera
@@ -69,21 +70,16 @@ class ImageOutputs(object):
   def compressed_preview(self) -> bytes:
     return self.encode(self.preview)
   
-  @property
-  def camera_name(self) -> str:
-    return self.raw.camera_name
-  
 
   @property
   def camera(self) -> Camera:
     height, width, _ = self.rgb.shape
 
     if self.calibration is not None:  
-      if self.calibration.width != width or self.calibration.height != height:
-        calibration = self.calibration.resize_image( (width, height) )
-        
-    return calibration
-
-
-
-
+      image_size = self.calibration.image_size
+      if image_size != (width, height):
+        return self.calibration.resize_image( (width, height) )
+      else:
+        return self.calibration
+    else:
+      return Camera((width, height), intrinsic=np.zeros(3, 3))

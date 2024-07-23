@@ -19,6 +19,12 @@ __all__ = [
   'Transform',
 
   'load_structured',
+
+  'Camera',
+  'CameraProperties',
+  'Manager',
+  'CameraInfo'
+  
 ]
 
 

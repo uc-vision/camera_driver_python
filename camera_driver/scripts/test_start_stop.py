@@ -2,40 +2,33 @@
 from dataclasses import replace
 from datetime import datetime
 import logging
-from queue import Queue
 from time import sleep
 import traceback
-from beartype.typing import Dict
-from camera_driver.scripts.util import ImageWriter, RateMonitor, view_images
+from camera_driver.scripts.util import Counter
 from omegaconf import OmegaConf
 
 from argparse import ArgumentParser
 
 from camera_driver.pipeline.unsync_pipeline import CameraPipelineUnsync
-from camera_driver.pipeline import CameraPipeline, ImageOutputs, CameraPipelineConfig
+from camera_driver.pipeline import CameraPipeline, CameraPipelineConfig
 
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG, format='%(message)s')
 
-
-
 def main():
 
   parser = ArgumentParser()
   parser.add_argument("--config", nargs='+', type=str, required=True)
-
-  parser.add_argument("--write", type=str)
-  parser.add_argument("--show", action="store_true")
   parser.add_argument("--no_sync", action="store_true")
   parser.add_argument("--reset", action="store_true")
+
 
   args = parser.parse_args()
 
   config = CameraPipelineConfig.load_yaml(*args.config)
   logger.info(OmegaConf.to_yaml(config))
-
-
+  
   if args.reset:
     config = replace(config, reset_cycle=True)
 
@@ -47,32 +40,16 @@ def main():
   else:
     pipeline = CameraPipeline(config, logger, query_time=get_timestamp)
 
-  if args.write:
-    writer = ImageWriter(args.write, num_cameras=len(pipeline.camera_info))
-
-    pipeline.bind(on_image_set=writer.write_images)
-    pipeline.bind(on_stopped=writer.stop) 
-
-
-  monitor = RateMonitor(pipeline, logger, interval=2.0)
 
   try:
-
-    pipeline.start()
-
-    if args.show:
-      queue = Queue(len(pipeline.camera_info))
-      def on_group(group:Dict[str, ImageOutputs]):
-        queue.put(group)
-
-      pipeline.bind(on_image_set=on_group)
-
-      view_images(queue, pipeline.camera_info, preview_width=config.parameters.preview_size)
-
-    else:
-      while True:
+    while True:
+        with Counter(pipeline) as counter:
+          pipeline.start()
+          sleep(2)
+          pipeline.stop()
+          
+          logger.info(f"Received: {counter.recieved}")
         sleep(1)
-
 
   except Exception as e:
     logger.error(traceback.format_exc())
@@ -80,10 +57,6 @@ def main():
   finally:
     pipeline.stop()
     pipeline.release()
-
-  
-
-
 
 
     

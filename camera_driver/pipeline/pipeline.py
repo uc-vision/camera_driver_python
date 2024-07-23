@@ -135,11 +135,7 @@ class CameraPipeline(Dispatcher):
                                     query_time=self.query_time, 
                                     logger=self.logger)    
 
-    self.camera_set.bind(on_buffer=self.sync_handler.push_image)
     self.sync_handler.bind(on_group=self.processor.process_image_set)
-
-    
-
 
 
   def start(self):
@@ -152,6 +148,8 @@ class CameraPipeline(Dispatcher):
     resync_time = self.query_time() - self.config.resync_offset_sec
     if self.sync_handler is None or self.sync_handler.most_recent_frame < resync_time:
       self.create_sync()
+
+    self.camera_set.bind(on_buffer=self.sync_handler.push_image)
 
     if not self.camera_set.is_started:
       self.camera_set.start()
