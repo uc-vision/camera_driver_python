@@ -15,7 +15,9 @@ Note - PyTorch is not included as a requirement and is assumed to be installed. 
 
 ## Basic usage 
 
-See `camera_driver/scripts/capture_images.py` for an example usage of the complete pipleine.
+`capture_images --config config_examples/blackfly_12p.yaml`
+
+See `camera_driver/scripts/capture_images.py` for usage details of the complete pipleine.
 
 
 ## Design
