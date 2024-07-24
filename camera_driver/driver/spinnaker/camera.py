@@ -104,6 +104,9 @@ class Camera(interface.Camera):
   @beartype
   def setup_mode(self, mode:str="slave"):
     self.log(logging.INFO, f"Loading camera configuration ({mode})...")
+    for k in ['stream', 'device', mode]:
+        assert k in self.presets, f"presets missing {k}, options are {list(presets.keys())}"
+
     helpers.load_defaults(self.camera)
 
     self._set_settings(self.stream_nodemap, self.presets['stream'])

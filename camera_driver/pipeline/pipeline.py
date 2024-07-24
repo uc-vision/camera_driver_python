@@ -181,5 +181,14 @@ class CameraPipeline(Dispatcher):
     self.stop()
 
     self.processor.stop()
+    del self.camera_set
+
     self.manager.release()
+    del self.manager
+
+    self.logger.info("Stopping taichi queue...")
     TaichiQueue.stop()
+
+    self.logger.info("Pipeline release done")
+
+
