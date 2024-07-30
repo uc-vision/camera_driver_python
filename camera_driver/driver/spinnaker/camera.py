@@ -105,7 +105,7 @@ class Camera(interface.Camera):
   def setup_mode(self, mode:str="slave"):
     self.log(logging.INFO, f"Loading camera configuration ({mode})...")
     for k in ['stream', 'device', mode]:
-        assert k in self.presets, f"presets missing {k}, options are {list(presets.keys())}"
+        assert k in self.presets, f"presets missing {k}, options are {list(self.presets.keys())}"
 
     helpers.load_defaults(self.camera)
 

@@ -77,7 +77,7 @@ class SyncHandler(Dispatcher):
     timed_out = self.grouper.timeout_groups(self.query_time() - self.sync_timeout)
     for group in timed_out:
       missing = self.camera_set - group.camera_set
-      self.logger.warning(f"Dropping timed out, missing {missing}")
+      self.logger.warning(f"Dropping timed out, missing {sorted(missing)}")
 
     buffer.release()
 

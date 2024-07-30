@@ -40,14 +40,14 @@ class Initialiser(Dispatcher):
 
   def try_initialise(self) -> Optional[Dict[str, float]]:
     if not self.has_minimum_frames():
-      return
-      
+      return None
+
     offsets = {k:np.median([offset.clock_time_sec - offset.timestamp_sec for offset in offsets])
                 for k, offsets in self.timestamps.items()}
 
     groups:List[FrameGroup] = []
 
-    grouper = FrameGrouper(offsets, self.sync_threshold * 2)
+    grouper = FrameGrouper(offsets, self.sync_threshold)
     for _, camera_stamps in self.timestamps.items():
       for stamp in camera_stamps:
         group = grouper.add_frame(stamp)
@@ -56,6 +56,10 @@ class Initialiser(Dispatcher):
 
     group_offsets = [group.time_offsets for group in groups]
 
+    
+    if len(group_offsets) == 0:
+      return None
+    
     mean_offsets = {k: offsets[k] + np.mean(cam_offsets) for k, cam_offsets in 
                     transpose_dicts_list(group_offsets).items()}
 

@@ -9,31 +9,32 @@ camera_serials:
   cam5: 4108703415 
   cam6: 4108703416 
 
-  # cam7: 4108696503
-  # cam8: 4108696505
-  # cam9: 4108696501
-  # cam10: 4108696504
-  # cam11: 4108705789
-  # cam12: 4108696507
+  cam7: 4108696503
+  cam8: 4108696505
+  cam9: 4108696501
+  cam10: 4108696504
+  cam11: 4108705789
+  cam12: 4108696507
 
 
 master: None
+default_mode: "slave"
 
-reset_cycle: False
+reset_cycle: True
 device: cuda:0
 
-sync_threshold_msec: 5   # threshold to consider images from the same trigger
+sync_threshold_msec: 10   # threshold to consider images from the same trigger
 timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
 
-init_window: 15
+init_window: 20
 init_timeout_msec: 2000
 
 # general parameters which can be changed at runtime
 parameters:  
   # camera parameters
-  exposure: 20000
-  gain: 0
-  framerate: 10.0
+  exposure: 2000
+  gain: 1
+  framerate: 16.0
 
   # output parameters
   jpeg_quality: 96
@@ -56,7 +57,7 @@ camera_settings:
   device:
     - PixelFormat: "BayerRG12g24IDS"    
     - BlackLevel: 0
-#    - DeviceLinkThroughputLimit: 200000000
+    - DeviceLinkThroughputLimit: 206000000
 
   stream:
     - StreamBufferHandlingMode: OldestFirst
@@ -69,11 +70,14 @@ camera_settings:
   # - TriggerSource: "Software"
 
   slave:
+    - TriggerMode: "On"
+
+    - TriggerSelector: "FrameStart"
+    - TriggerSource: "Line0"
+
     - LineSelector: "Line0"
     - LineMode: "Input"
-    - TriggerSelector: "FrameStart"
-    - TriggerMode: "On"
-    - TriggerSource: "Line0"
+
     - TriggerActivation: "RisingEdge"
     # - TriggerOverlap: "ReadOut"
 

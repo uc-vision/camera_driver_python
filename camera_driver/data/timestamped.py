@@ -18,7 +18,7 @@ class Timestamped:
   
   @property
   def stamp_pretty(self):
-    return self.datetime.strftime('%M%S.3f')
+    return self.datetime.strftime('%M%S.%f')
 
   def with_timestamp(self, timestamp_sec:float) -> 'Timestamped':
     return replace(self, timestamp_sec=timestamp_sec)

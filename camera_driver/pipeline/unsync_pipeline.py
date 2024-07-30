@@ -34,7 +34,7 @@ class CameraPipelineUnsync(Dispatcher):
 
     cameras, manager = cameras_from_config(config, logger)
     for k, camera in cameras.items():
-      camera.setup_mode("master")
+      camera.setup_mode(config.default_mode)
       camera.update_properties(config.parameters.camera_properties)
 
     self.camera_set = CameraSet(cameras, logger, master=config.master)

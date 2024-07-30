@@ -77,7 +77,7 @@ class Manager(interface.Manager):
       self.logger.info(f"Waiting for cameras {by_serial}")
 
       while len(missing:=set(cameras.values()) - set(self.devices.keys())) > 0:
-        self.logger.debug(f"Waiting for cameras {missing}")
+        self.logger.debug(f"Waiting for cameras {sorted(missing)}")
         self.device_manager.Update()
 
       return {name:self.init_camera(name, serial) for name, serial in cameras.items()}

@@ -44,6 +44,8 @@ class Camera(interface.Camera):
     helpers.set_value(self.nodemap, "UserSetSelector", "Default")
     helpers.execute_wait(self.nodemap, "UserSetLoad")
 
+    # print(self.camera_info())
+
     self._set_settings(self.nodemap, self.presets['device'])
     self._set_settings(self.nodemap, self.presets[mode])
 

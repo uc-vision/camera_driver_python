@@ -22,7 +22,7 @@ class FrameGroup:
 
 
   def __repr__(self):
-    times = ", ".join([f"{name}: {frame.datetime.strftime('%M%S.3f')}" for name, frame in self.frames.items()])
+    times = ", ".join([f"{name}: {frame.datetime.strftime('%S.%f')}" for name, frame in self.frames.items()])
     return f"FrameGroup({times})"
 
   @property
@@ -93,6 +93,10 @@ class FrameGrouper():
     group = FrameGroup(frame)
     self.groups.append(group)
     return group   
+  
+  @property
+  def sorted_groups(self):
+    return sorted(self.groups, key=lambda group: group.timestamp)
       
   def update_offsets(self, group:FrameGroup):
     """

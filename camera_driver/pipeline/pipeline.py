@@ -22,6 +22,9 @@ from .image.image_outputs import ImageOutputs
 from camera_driver.concurrent.taichi_queue import TaichiQueue
 
 
+class InitException(Exception):
+  pass
+
 @beartype
 def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
 
@@ -107,10 +110,10 @@ class CameraPipeline(Dispatcher):
       offsets = wait_for(init, 'initialized', self.config.init_timeout_msec / 1000.)
       self.camera_set.unbind(init.push_image)
 
-      # self.camera_set.stop()
 
       if offsets is None:
-        raise RuntimeError(f"Failed to initialize camera offsets, recieved: {init.frame_counts()}")
+        self.camera_set.stop()
+        raise InitException(f"Failed to initialize camera offsets, recieved: {init.frame_counts()}, minimum frames: {self.config.init_window}")
 
       return offsets
 
@@ -145,15 +148,19 @@ class CameraPipeline(Dispatcher):
 
     self.logger.info("Starting camera pipeline")
 
-    resync_time = self.query_time() - self.config.resync_offset_sec
-    if self.sync_handler is None or self.sync_handler.most_recent_frame < resync_time:
-      self.create_sync()
+    try:
+      resync_time = self.query_time() - self.config.resync_offset_sec
+      if self.sync_handler is None or self.sync_handler.most_recent_frame < resync_time:
+        self.create_sync()
 
-    self.camera_set.bind(on_buffer=self.sync_handler.push_image)
+      self.camera_set.bind(on_buffer=self.sync_handler.push_image)
 
-    if not self.camera_set.is_started:
-      self.camera_set.start()
-    self.logger.info("Started camera pipeline")
+      if not self.camera_set.is_started:
+        self.camera_set.start()
+      self.logger.info("Started camera pipeline")
+    except Exception as e:
+      raise e
+  
 
     
   @property

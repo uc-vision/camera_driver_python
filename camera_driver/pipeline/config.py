@@ -80,13 +80,14 @@ class CameraPipelineConfig:
   camera_serials:Dict[str, str]
 
   master:Optional[str] 
+  default_mode:str = 'slave'
   reset_cycle:bool = True
 
   sync_threshold_msec:float = 10.0
   timeout_msec:float = 2000.0
 
   init_window:int = 5
-  init_timeout_msec:float = 1000.0
+  init_timeout_msec:float = 5000.0
 
   resync_offset_sec:float = 600.0 # 10 minutes
 
