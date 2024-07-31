@@ -28,7 +28,8 @@ class SyncHandler(Dispatcher):
           process_buffer:ProcessBuffer,
           query_time:TimeQuery,  
 
-          logger:logging.Logger):
+          logger:logging.Logger,
+          num_workers:int=2):
     
     
     self.sync_threshold = sync_threshold
@@ -41,7 +42,7 @@ class SyncHandler(Dispatcher):
 
     self.grouper = FrameGrouper(time_offsets, sync_threshold)
     self.work_queue = WorkQueue("sync_handler", self._process_worker, 
-                                logger=logger, num_workers=1, max_size=self.num_cameras)
+                                logger=logger, num_workers=num_workers, max_size=self.num_cameras)
     
     self.query_time = query_time
     self.clock_drift = 0.0

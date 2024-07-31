@@ -59,6 +59,8 @@ class CameraPipeline(Dispatcher):
     self.query_time = query_time
 
     cameras, manager = cameras_from_config(config, logger)
+
+    
     for k, camera in cameras.items():
       camera.setup_mode("master" if k == config.master else "slave")
       camera.update_properties(config.parameters.camera_properties)
@@ -75,7 +77,8 @@ class CameraPipeline(Dispatcher):
       logger.info(str(info))
 
     self.processor = FrameProcessor(self.camera_info, settings=config.parameters, 
-                                    logger=logger, device=torch.device(config.device))
+                                    logger=logger, device=torch.device(config.device), 
+                                    num_workers=config.process_workers, max_size=config.process_workers)
   
 
     self.processor.bind(on_frame=self._on_image_set)
@@ -108,11 +111,11 @@ class CameraPipeline(Dispatcher):
       self.camera_set.start()
 
       offsets = wait_for(init, 'initialized', self.config.init_timeout_msec / 1000.)
+      self.camera_set.stop()
+
       self.camera_set.unbind(init.push_image)
 
-
       if offsets is None:
-        self.camera_set.stop()
         raise InitException(f"Failed to initialize camera offsets, recieved: {init.frame_counts()}, minimum frames: {self.config.init_window}")
 
       return offsets
@@ -136,7 +139,8 @@ class CameraPipeline(Dispatcher):
 
                                     process_buffer = self._process_buffer,
                                     query_time=self.query_time, 
-                                    logger=self.logger)    
+                                    logger=self.logger,
+                                    num_workers=self.config.sync_workers)    
 
     self.sync_handler.bind(on_group=self.processor.process_image_set)
 

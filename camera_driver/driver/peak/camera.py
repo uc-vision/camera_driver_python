@@ -147,27 +147,21 @@ class Camera(interface.Camera):
 
 
   def _capture_thread(self):
-    stats = SimpleNamespace(n=0, incomplete=0, timed_out=0)
     while self.started:
       try:
-        raw_buffer = self.data_stream.WaitForFinishedBuffer(ids_peak.Timeout(self.stream_timeout))  
+        raw_buffer = self.data_stream.WaitForFinishedBuffer(ids_peak.Timeout.INFINITE_TIMEOUT)  
         
         if raw_buffer.IsIncomplete():
-          stats.incomplete += 1
           self.log(logging.WARNING, "Recieved incomplete buffer")
           raw_buffer.ParentDataStream().QueueBuffer(raw_buffer)
           continue  
               
-        stats.n += 1
         buffer = Buffer(self.name, raw_buffer)
         self.emit("on_buffer", buffer)
 
       except ids_peak.AbortedException:
         break
-      except ids_peak.TimeoutException:
-        stats.timed_out += 1
-        self.log(logging.INFO, f"Timeout waiting for buffer, {stats}")
-        continue
+
 
 
 
@@ -191,7 +185,7 @@ class Camera(interface.Camera):
     helpers.execute_wait(self.nodemap, "AcquisitionStart")
 
     self.started = True
-    self.log(logging.INFO, "started.")
+    self.log(logging.DEBUG, "started.")
 
     self.emit("on_started", True)
     self.capture_thread.start()
@@ -214,7 +208,7 @@ class Camera(interface.Camera):
     self._flush_buffers()
     self.data_stream = None
     
-    self.log(logging.INFO, "stopped.")
+    self.log(logging.DEBUG, "stopped.")
     self.emit("on_started", False)
 
 

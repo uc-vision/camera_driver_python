@@ -23,7 +23,7 @@ default_mode: "slave"
 reset_cycle: False
 device: cuda:0
 
-sync_threshold_msec: 10   # threshold to consider images from the same trigger
+sync_threshold_msec: 8   # threshold to consider images from the same trigger
 timeout_msec: 2000        # timeout for images waiting to be matched up with a trigger
 
 init_window: 20
@@ -37,8 +37,8 @@ parameters:
   framerate: 16.0
 
   # output parameters
-  jpeg_quality: 96
-  resize_width: 0
+  jpeg_quality: 92
+  resize_width: 1854
   preview_size: 200
 
   # Tonemapping parameters
@@ -57,7 +57,7 @@ camera_settings:
   device:
     - PixelFormat: "BayerRG12g24IDS"    
     - BlackLevel: 0
-    - DeviceLinkThroughputLimit: 206000000
+      #    - DeviceLinkThroughputLimit: 206000000
 
   stream:
     - StreamBufferHandlingMode: OldestFirst
@@ -75,8 +75,8 @@ camera_settings:
     - TriggerSelector: "FrameStart"
     - TriggerSource: "Line0"
 
-    - LineSelector: "Line0"
-    - LineMode: "Input"
+    # - LineSelector: "Line0" 
+    # - LineMode: "Input"
 
     - TriggerActivation: "RisingEdge"
     # - TriggerOverlap: "ReadOut"

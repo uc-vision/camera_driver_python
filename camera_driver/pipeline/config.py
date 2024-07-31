@@ -90,8 +90,10 @@ class CameraPipelineConfig:
   init_timeout_msec:float = 5000.0
 
   resync_offset_sec:float = 600.0 # 10 minutes
-
   device:str = 'cuda'
+
+  process_workers:int = 4
+  sync_workers:int = 1
 
   parameters: ImageSettings
   camera_settings: Dict[str, List]

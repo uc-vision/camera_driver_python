@@ -15,8 +15,7 @@ from camera_driver.pipeline.unsync_pipeline import CameraPipelineUnsync
 from camera_driver.pipeline import CameraPipeline, ImageOutputs, CameraPipelineConfig
 
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG, format='%(message)s')
+
 
 
 
@@ -24,6 +23,8 @@ def main():
 
   parser = ArgumentParser()
   parser.add_argument("--config", nargs='+', type=str, required=True)
+  parser.add_argument("--log_level", default="info", type=str, choices=["debug", "info", "warning", "error"])
+
 
   parser.add_argument("--write", type=str)
   parser.add_argument("--show", action="store_true")
@@ -31,6 +32,9 @@ def main():
   parser.add_argument("--reset", action="store_true")
 
   args = parser.parse_args()
+
+  logger = logging.getLogger(__name__)
+  logging.basicConfig(level=logging.getLevelName(args.log_level.upper()), format='%(message)s')
 
   config = CameraPipelineConfig.load_yaml(*args.config)
   logger.info(OmegaConf.to_yaml(config))

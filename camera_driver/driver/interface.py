@@ -105,6 +105,11 @@ class Camera(Dispatcher, metaclass=abc.ABCMeta):
   def update_properties(self, settings:CameraProperties):
     raise NotImplementedError()
 
+
+  @abc.abstractmethod
+  def start(self):
+    raise NotImplementedError()
+
   @abc.abstractmethod
   def stop(self):
     raise NotImplementedError()

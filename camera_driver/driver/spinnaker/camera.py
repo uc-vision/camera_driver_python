@@ -166,7 +166,7 @@ class Camera(interface.Camera):
     if not helpers.validate_streaming(self.camera):
       raise RuntimeError(f"Camera {self.name} did not begin streaming")
 
-    self.log(logging.INFO, "started.")
+    self.log(logging.DEBUG, "started.")
 
     self.emit("on_started", True)
 
@@ -179,7 +179,7 @@ class Camera(interface.Camera):
     
     self.camera.EndAcquisition()
 
-    self.log(logging.INFO, "stopped.")
+    self.log(logging.DEBUG, "stopped.")
     self.emit("on_started", False)
 
   def release(self):

@@ -1,5 +1,6 @@
 from functools import cache
 import logging
+from multiprocessing.pool import ThreadPool
 from typing import Set
 from beartype.typing import Dict, Optional
 
@@ -53,7 +54,13 @@ class CameraSet(Dispatcher):
 
     for k, camera in self.cameras.items():
       camera.bind(on_buffer = self.on_buffer)
-      camera.start()
+
+    with ThreadPool(len(self.cameras)) as pool:
+         pool.map(lambda camera: camera.start(), self.cameras.values(), chunksize=1)
+
+    # for k, camera in self.cameras.items():
+    #   camera.bind(on_buffer = self.on_buffer)
+    #   camera.start()
 
     self.is_started = True
 
@@ -62,13 +69,14 @@ class CameraSet(Dispatcher):
       camera.unbind(self.on_buffer)
 
 
-
   def stop(self):
     assert self.is_started, "CameraSet not started"
 
     for k, camera in self.cameras.items():
       camera.unbind(self.on_buffer)
-      camera.stop()
+
+    with ThreadPool(len(self.cameras)) as pool:
+         pool.map(lambda camera: camera.stop(), self.cameras.values(), chunksize=1)
 
     self.is_started = False
 
