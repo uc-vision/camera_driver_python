@@ -43,6 +43,7 @@ dependency_links = ["https://pypi.taichi.graphics/simple/"]
 capture_images = "camera_driver.scripts.capture_images:main"
 bench_processing = "camera_driver.scripts.bench_processing:main"
 test_start_stop = "camera_driver.scripts.test_start_stop:main"
+bench_writer = "camera_driver.scripts.bench_writer:main"
 
 # [tool.setuptools.package-data]
 # [tool.pyright]
