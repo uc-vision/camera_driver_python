@@ -17,14 +17,14 @@ def main():
   args = argparse.ArgumentParser()
   args.add_argument('input', type=str, help='Input file')
   args.add_argument('output', type=str, help='Output folder')
-  args.add_argument('num_threads', type=int, help='Number of threads')
-  args.add_argument('n', type=int, default=10000, help='Number of writes')
+  args.add_argument('--num_threads', type=int, default=12, help='Number of threads')
+  args.add_argument('--n', type=int, default=10000, help='Number of writes')
 
   args = args.parse_args()
 
   logger = logging.getLogger('bench_writer')
   logger.setLevel(logging.INFO)
-  queue = WorkQueue(write_file, logger, num_workers=args.num_threads)
+  queue = WorkQueue("write_file", write_file, num_workers=args.num_threads, logger=logger)
   queue.start()
   
 
@@ -38,6 +38,6 @@ def main():
   for i in tqdm(range(args.n)):
     queue.enqueue((data, output / f'file_{i:04d}'))
 
-
+  queue.stop()  
 if __name__ == '__main__':
   main()
