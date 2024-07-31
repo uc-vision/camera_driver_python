@@ -32,7 +32,7 @@ init_timeout_msec: 2000
 # general parameters which can be changed at runtime
 parameters:  
   # camera parameters
-  exposure: 2000
+  exposure: 1000
   gain: 1
   framerate: 16.0
 
