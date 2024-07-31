@@ -33,6 +33,8 @@ class Camera(interface.Camera):
     self.name = name
     self.presets = presets
 
+    self.stream_timeout = 1000
+
 
   def compute_clock_offset(self, get_time_sec:Callable[[], float]):
     raise NotImplementedError()
@@ -146,17 +148,23 @@ class Camera(interface.Camera):
   def _capture_thread(self):
     while self.started:
       try:
-        raw_buffer = self.data_stream.WaitForFinishedBuffer(ids_peak.DataStream.INFINITE_NUMBER)  
+        raw_buffer = self.data_stream.WaitForFinishedBuffer(ids_peak.Timeout(self.stream_timeout))  
+
+        if raw_buffer.IsIncomplete():
+          self.log(logging.WARNING, "Recieved incomplete buffer")
+          raw_buffer.ParentDataStream().QueueBuffer(raw_buffer)
+          continue  
+              
+        buffer = Buffer(self.name, raw_buffer)
+        self.emit("on_buffer", buffer)
+
       except ids_peak.AbortedException:
         break
+      except ids_peak.TimeoutException:
+        self.log(logging.INFO, "Timeout waiting for buffer")
+        continue
 
-      if raw_buffer.IsIncomplete():
-        self.log(logging.WARNING, "Recieved incomplete buffer")
-        raw_buffer.ParentDataStream().QueueBuffer(raw_buffer)
-        continue  
-            
-      buffer = Buffer(self.name, raw_buffer)
-      self.emit("on_buffer", buffer)
+
 
   def log(self, level:int, message:str):
     self.logger.log(level, f"{self.name}:{message}")
