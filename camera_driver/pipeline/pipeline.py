@@ -60,7 +60,7 @@ class CameraPipeline(Dispatcher):
 
     cameras, manager = cameras_from_config(config, logger)
 
-    
+
     for k, camera in cameras.items():
       camera.setup_mode("master" if k == config.master else "slave")
       camera.update_properties(config.parameters.camera_properties)
@@ -68,6 +68,8 @@ class CameraPipeline(Dispatcher):
     self.camera_set = CameraSet(cameras, logger, master=config.master)
 
     self.sync_handler = None
+    self.init = None
+
     self.manager = manager
     self.logger = logger
 
@@ -82,6 +84,17 @@ class CameraPipeline(Dispatcher):
   
 
     self.processor.bind(on_frame=self._on_image_set)
+
+    
+  def _on_buffer(self, buffer:Buffer):
+    if self.init is not None:
+      self.init.push_image(buffer)
+    elif self.sync_handler is not None:
+      self.sync_handler.push_image(buffer)
+    else:
+      buffer.release()
+  
+
 
   def _on_image_set(self, group:Dict[str, ImageOutputs]):
     self.emit("on_image_set", group)
@@ -101,23 +114,22 @@ class CameraPipeline(Dispatcher):
     self.emit("on_settings", image_settings)
 
   def initialize_offsets(self):
-      init = Initialiser(self.camera_set.camera_ids, 
+      self.init = Initialiser(self.camera_set.camera_ids, 
                          self.query_time, 
                 init_window=self.config.init_window, 
                 sync_threshold=self.config.sync_threshold_msec / 1000., 
                 logger=self.logger)
       
-      self.camera_set.bind(on_buffer=init.push_image)
+      self.camera_set.bind(on_buffer=self._on_buffer)
       self.camera_set.start()
 
-      offsets = wait_for(init, 'initialized', self.config.init_timeout_msec / 1000.)
-      self.camera_set.stop()
-
-      self.camera_set.unbind(init.push_image)
+      offsets = wait_for(self.init, 'initialized', self.config.init_timeout_msec / 1000.)
+      # self.camera_set.stop()
 
       if offsets is None:
-        raise InitException(f"Failed to initialize camera offsets, recieved: {init.frame_counts()}, minimum frames: {self.config.init_window}")
+        raise InitException(f"Failed to initialize camera offsets, recieved: {self.init.frame_counts()}, minimum frames: {self.config.init_window}")
 
+      self.init = None
       return offsets
 
   def create_sync(self):
@@ -157,10 +169,11 @@ class CameraPipeline(Dispatcher):
       if self.sync_handler is None or self.sync_handler.most_recent_frame < resync_time:
         self.create_sync()
 
-      self.camera_set.bind(on_buffer=self.sync_handler.push_image)
 
       if not self.camera_set.is_started:
+        self.camera_set.bind(on_buffer=self._on_buffer)
         self.camera_set.start()
+
       self.logger.info("Started camera pipeline")
     except Exception as e:
       raise e
