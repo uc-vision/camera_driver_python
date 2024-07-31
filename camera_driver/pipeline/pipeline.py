@@ -92,6 +92,7 @@ class CameraPipeline(Dispatcher):
     elif self.sync_handler is not None:
       self.sync_handler.push_image(buffer)
     else:
+      # This ensures that no buffers are lost between init and sync
       buffer.release()
   
 
