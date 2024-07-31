@@ -52,7 +52,7 @@ def main():
     pipeline = CameraPipeline(config, logger, query_time=get_timestamp)
 
   if args.write:
-    writer = ImageWriter(args.write, num_cameras=len(pipeline.camera_info))
+    writer = ImageWriter(args.write, num_cameras=len(pipeline.camera_info), logger=logger)
 
     pipeline.bind(on_image_set=writer.write_images)
     pipeline.bind(on_stopped=writer.stop) 

@@ -19,12 +19,12 @@ from camera_driver.pipeline import CameraInfo, ImageOutputs
 
 
 class ImageWriter():
-  def __init__(self, output_dir:str, num_cameras:int=1, logger:logging.Logger=None):
+  def __init__(self, output_dir:str, num_cameras:int, logger:logging.Logger):
     self.output_dir = Path(output_dir)
     self.counter = 0
 
     self.work_queue = WorkQueue("image_writer", self.process_image, logger=logger, 
-                                num_workers=2, max_size=num_cameras)
+                                num_workers=num_cameras, max_size=num_cameras)
     self.work_queue.start()
     
 
