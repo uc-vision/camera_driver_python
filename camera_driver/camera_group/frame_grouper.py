@@ -98,12 +98,12 @@ class FrameGrouper():
   def sorted_groups(self):
     return sorted(self.groups, key=lambda group: group.timestamp)
       
-  def update_offsets(self, group:FrameGroup):
+  def update_offsets(self, group:FrameGroup, ema:float=0.1):
     """
     Update time offsets based on differences from the mean timestamp.
     """
     for name, offset in group.time_offsets.items():
-      self.time_offsets[name] -= offset
+      self.time_offsets[name] -= offset * ema
 
   def set_offsets(self, offsets:Dict[str, float]):
     assert set(offsets.keys()) == self.camera_set, "offsets must match camera set"

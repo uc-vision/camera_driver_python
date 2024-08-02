@@ -42,6 +42,14 @@ class WorkQueue():
   def worker_ids(self) -> List[int]:
     return [worker.ident for worker in self.workers]
   
+  @property
+  def free(self) -> int:
+    return self.queue.maxsize - self.queue.qsize()
+  
+  @property
+  def size(self) -> int:
+    return self.queue.qsize()
+  
   def stop(self) -> None:
     if self.workers is not None:
       self.logger.info(f"Stopping WorkQueue {self.name}, ({self.num_workers} threads)")

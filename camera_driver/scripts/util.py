@@ -23,33 +23,48 @@ class ImageWriter():
     self.output_dir = Path(output_dir)
     self.counter = 0
 
-    self.work_queue = WorkQueue("image_writer", self.process_image, logger=logger, 
-                                num_workers=num_cameras, max_size=num_cameras)
-    self.work_queue.start()
-    
+    self.encode_queue = WorkQueue("image_encoder", self._encode_image, logger=logger, 
+                                num_workers=1, max_size=num_cameras)
+
+    self.write_queue = WorkQueue("image_writer", self._process_image, logger=logger, 
+                                num_workers=num_cameras, max_size=num_cameras * 4)
+    self.write_queue.start()
+    self.encode_queue.start()
+
+    self.logger = logger
+
 
   def write_images(self, images:Dict[str, ImageOutputs]):
     for name, image in images.items():
-      self.work_queue.enqueue((image, self.counter))
+      filename = self.output_dir  / image.camera_name / f"image_{self.counter:04d}.jpg"
+      self.encode_queue.enqueue((image, filename))
 
     self.counter = self.counter + 1
 
+  def _encode_image(self, image_counter:Tuple[ImageOutputs, int]):
+    image, filename = image_counter
 
-  def process_image(self, image_counter:Tuple[ImageOutputs, int]):
-    image, counter = image_counter
+    if self.write_queue.free == 0:
+      self.logger.warn(f"Write queue is full ({self.write_queue.size})")
 
-    camera_dir = self.output_dir/image.camera_name
-    camera_dir.mkdir(parents=True, exist_ok=True)
+    self.write_queue.enqueue((image.compressed, filename))
 
-    with open(camera_dir / f"image_{counter:04d}.jpg", "wb") as f:
-      f.write(image.compressed)
+
+  def _process_image(self, image_counter:Tuple[ImageOutputs, int]):
+    compressed, filename = image_counter
+    filename.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(filename, "wb") as f:
+      f.write(compressed)
 
 
   def stop(self):
-    self.work_queue.stop()
+    self.write_queue.stop()
+    self.encode_queue.stop()
 
 
 class ImageGrid():
+
   def __init__(self, camera_sizes:List[Tuple[int, int]]):
     
     self.rows = math.ceil(math.sqrt(len(camera_sizes)))

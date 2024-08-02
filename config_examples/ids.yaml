@@ -29,6 +29,9 @@ timeout_msec: 2000        # timeout for images waiting to be matched up with a t
 init_window: 20
 init_timeout_msec: 2000
 
+process_workers: 4
+sync_workers: 2
+
 # general parameters which can be changed at runtime
 parameters:  
   # camera parameters
@@ -37,7 +40,7 @@ parameters:
   framerate: 16.0
 
   # output parameters
-  jpeg_quality: 92
+  jpeg_quality: 80
   resize_width: 1854
   preview_size: 200
 
