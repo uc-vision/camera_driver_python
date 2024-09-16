@@ -12,31 +12,29 @@ from camera_driver.pipeline.pipeline import CameraPipeline
 import numpy as np
 import cv2
 
-
 from camera_driver.concurrent import WorkQueue
 from camera_driver.pipeline import CameraInfo, ImageOutputs
 
 
-
 class ImageWriter():
-  def __init__(self, output_dir:str, num_cameras:int, logger:logging.Logger):
-    self.output_dir = Path(output_dir)
-    self.counter = 0
+  def __init__(self, scan_folder:str, num_cameras:int, logger:logging.Logger):
+
+    self._scan_folder = Path(scan_folder)
+    self._counter = 0
 
     self.encode_queue = WorkQueue("image_encoder", self._encode_image, logger=logger, 
                                 num_workers=1, max_size=num_cameras)
 
     self.write_queue = WorkQueue("image_writer", self._process_image, logger=logger, 
                                 num_workers=num_cameras, max_size=num_cameras * 4)
-    self.write_queue.start()
-    self.encode_queue.start()
+
+    self._is_started = False
 
     self.logger = logger
 
-
   def write_images(self, images:Dict[str, ImageOutputs]):
     for name, image in images.items():
-      filename = self.output_dir  / image.camera_name / f"image_{self.counter:04d}.jpg"
+      filename = self.scan_folder  / image.camera_name / f"image_{self.counter:04d}.jpg"
       self.encode_queue.enqueue((image, filename))
 
     self.counter = self.counter + 1
@@ -45,7 +43,7 @@ class ImageWriter():
     image, filename = image_counter
 
     if self.write_queue.free == 0:
-      self.logger.warn(f"Write queue is full ({self.write_queue.size})")
+      self.warn(f"Write queue is full ({self.write_queue.size})")
 
     self.write_queue.enqueue((image.compressed, filename))
 
@@ -57,10 +55,54 @@ class ImageWriter():
     with open(filename, "wb") as f:
       f.write(compressed)
 
-
   def stop(self):
-    self.write_queue.stop()
     self.encode_queue.stop()
+    self.write_queue.stop()
+    self.is_started = False
+    self.info("Stopped image writer")
+
+  def start(self):
+    self.write_queue.start()
+    self.encode_queue.start() 
+    self.is_started = True
+    self.info("Started image writer")
+
+  @property
+  def is_started(self):
+    return self._is_started
+
+  @is_started.setter
+  def is_started(self, value: bool):
+    self._is_started = value
+
+  @property
+  def scan_folder(self):
+    return self._scan_folder
+
+  @scan_folder.setter
+  def scan_folder(self, value: str):
+    self._scan_folder = Path(value)
+
+  @property
+  def counter(self):
+    return self._counter
+  
+  @counter.setter
+  def counter(self, value: int):
+    self._counter = value
+
+  # -------------------------------------------
+  #   Helpers
+  # -------------------------------------------
+
+  def info(self, msg):
+    self.logger.info(msg)
+
+  def error(self, msg):
+    self.logger.error(msg)
+
+  def warn(self, msg):
+    self.logger.warning(msg)
 
 
 class ImageGrid():
