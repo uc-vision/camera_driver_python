@@ -59,13 +59,11 @@ class ImageWriter():
     self.encode_queue.stop()
     self.write_queue.stop()
     self.is_started = False
-    self.info("Stopped image writer")
 
   def start(self):
     self.write_queue.start()
     self.encode_queue.start() 
     self.is_started = True
-    self.info("Started image writer")
 
   @property
   def is_started(self):
