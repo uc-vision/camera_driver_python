@@ -117,31 +117,30 @@ class ImageWriter():
       )
     save_json(index_file, output)
 
-
-  def stop(self):
-    self.pipeline.unbind(self.write_images)
-    self.encode_queue.stop()
-    self.write_queue.stop()
-    self.save_capture()
-    self.is_started = False
-
-  def start(self):
+  def _start(self, func: Callable[[Dict[str, ImageOutputs]], None]):
     self.write_queue.start()
     self.encode_queue.start()
-    self.pipeline.bind(on_image_set=self.write_images)
-    self.is_started = True
+    self.pipeline.bind(on_image_set=func)
 
+  def _stop(self, func: Callable[[Dict[str, ImageOutputs]], None]):
+    self.pipeline.unbind(func)
+    self.encode_queue.stop()
+    self.write_queue.stop()
 
   def single(self):
     def capture_one(images:Dict[str, ImageOutputs]):
       self.write_images(images)
-      self.pipeline.unbind(capture_one)
-      self.encode_queue.stop()
-      self.write_queue.stop()
+      self._stop(capture_one)
+    self._start(capture_one)
 
-    self.write_queue.start()
-    self.encode_queue.start()
-    self.pipeline.bind(on_image_set=capture_one)
+  def stop(self):
+    self._stop(self.write_images)
+    self.save_capture()
+    self.is_started = False
+
+  def start(self):
+    self._start(self.write_images)
+    self.is_started = True
 
 
 class ImageGrid():
