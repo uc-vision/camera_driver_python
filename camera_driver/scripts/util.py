@@ -52,11 +52,11 @@ class ImageWriter():
   def write_images(self, images:Dict[str, ImageOutputs]):
 
     filename_mapping = {}
-    filename = f"{self.counter:04d}"
+    filename = f"{self.counter:05d}"
     for name, image in images.items():
       file_uri = self.output_dir  / image.camera_name / f"{filename}.jpg"
       self.encode_queue.enqueue((image, file_uri))
-      filename_mapping[image.camera_name] = filename
+      filename_mapping[image.camera_name] = f"{image.camera_name}/{filename}.jpg"
     
     dt = datetime.fromtimestamp(image.timestamp_sec)
     extrinsics = self.get_extrinsics(dt)
