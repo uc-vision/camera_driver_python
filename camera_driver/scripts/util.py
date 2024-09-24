@@ -7,43 +7,85 @@ import math
 from pathlib import Path
 from queue import Queue
 from typing import List, Optional
-from beartype.typing import Dict, Tuple
+from beartype.typing import Dict, Tuple, NamedTuple
 from camera_driver.pipeline.pipeline import CameraPipeline
 import numpy as np
 import cv2
 
 from camera_driver.concurrent import WorkQueue
 from camera_driver.pipeline import CameraInfo, ImageOutputs
+from beartype.typing import Callable, Dict
+from camera_geometry.json import save_json
+from camera_geometry.calib.save import export_rig
+from py_structs import struct, transpose_list_dicts
 
+GetExtrinsics = Callable[[datetime], np.ndarray]
 
 class ImageWriter():
-  def __init__(self, scan_folder:str, num_cameras:int, logger:logging.Logger):
+  def __init__(self, 
+               pipeline:CameraPipeline,
+               output_dir:Path, 
+               num_cameras:int, 
+               logger:logging.Logger, 
+               get_extrinsics:GetExtrinsics = lambda dt: {}):
+    
+    self.pipeline = pipeline
+    self.output_dir = output_dir
+    self.counter = 0
+    self.is_started = False
+    self.get_extrinsics = get_extrinsics
+    self.logger = logger
+    self.frames = []
 
-    self._scan_folder = Path(scan_folder)
-    self._counter = 0
+    self.calib = None
 
     self.encode_queue = WorkQueue("image_encoder", self._encode_image, logger=logger, 
                                 num_workers=1, max_size=num_cameras)
-
+  
     self.write_queue = WorkQueue("image_writer", self._process_image, logger=logger, 
                                 num_workers=num_cameras, max_size=num_cameras * 4)
-
-    self._is_started = False
-
-    self.logger = logger
+    
+  def new_folder(self, folder):
+    self.output_dir = folder
+    self.counter = 0
 
   def write_images(self, images:Dict[str, ImageOutputs]):
-    for name, image in images.items():
-      filename = self.scan_folder  / image.camera_name / f"image_{self.counter:04d}.jpg"
-      self.encode_queue.enqueue((image, filename))
 
+    filename_mapping = {}
+    filename = f"{self.counter:04d}"
+    for name, image in images.items():
+      file_uri = self.output_dir  / image.camera_name / f"{filename}.jpg"
+      self.encode_queue.enqueue((image, file_uri))
+      filename_mapping[image.camera_name] = filename
+    
+    dt = datetime.fromtimestamp(image.timestamp_sec)
+    extrinsics = self.get_extrinsics(dt)
+    metadata = struct(
+      timestamp=[int(dt.timestamp()), dt.microsecond * 1000],
+      images=filename_mapping,
+      transforms={"tracking": extrinsics}
+    )
+    metadata_file = self.output_dir / "metadata" / f"{filename}.json"
+    metadata_file.parent.mkdir(parents=True, exist_ok=True)
+    save_json(metadata_file, metadata)
+
+    calib_file: Path = self.output_dir / 'calibration.json'
+    if not calib_file.exists():
+      calib = {cam_name: image.camera for cam_name,image in images.items()}
+      calib_rig = export_rig(calib)
+      tracking_rig = struct(tracking_rig=np.eye(4))
+      self.calib = calib_rig.merge_(tracking_rig)
+      save_json(calib_file, self.calib)
+
+    self.frames.append(metadata)
     self.counter = self.counter + 1
+
 
   def _encode_image(self, image_counter:Tuple[ImageOutputs, int]):
     image, filename = image_counter
 
     if self.write_queue.free == 0:
-      self.warn(f"Write queue is full ({self.write_queue.size})")
+      self.logger.warning(f"Write queue is full ({self.write_queue.size})")
 
     self.write_queue.enqueue((image.compressed, filename))
 
@@ -55,52 +97,51 @@ class ImageWriter():
     with open(filename, "wb") as f:
       f.write(compressed)
 
+
+  def save_capture(self):
+    if len(self.frames) == 0:
+      return
+
+    index_file = self.output_dir / "capture.json"
+    frames = transpose_list_dicts(self.frames)
+    output = struct(
+      image_sets = struct(rgb = frames.images),
+      timestamps = frames.timestamp,
+      transforms = frames.transforms
+    )
+    
+    if self.calib is not None:
+      output = output.extend_(
+        cameras=self.calib.cameras, 
+        camera_poses=self.calib.camera_poses
+      )
+    save_json(index_file, output)
+
+
   def stop(self):
+    self.pipeline.unbind(self.write_images)
     self.encode_queue.stop()
     self.write_queue.stop()
+    self.save_capture()
     self.is_started = False
 
   def start(self):
     self.write_queue.start()
-    self.encode_queue.start() 
+    self.encode_queue.start()
+    self.pipeline.bind(on_image_set=self.write_images)
     self.is_started = True
 
-  @property
-  def is_started(self):
-    return self._is_started
 
-  @is_started.setter
-  def is_started(self, value: bool):
-    self._is_started = value
+  def single(self):
+    def capture_one(images:Dict[str, ImageOutputs]):
+      self.write_images(images)
+      self.pipeline.unbind(capture_one)
+      self.encode_queue.stop()
+      self.write_queue.stop()
 
-  @property
-  def scan_folder(self):
-    return self._scan_folder
-
-  @scan_folder.setter
-  def scan_folder(self, value: str):
-    self._scan_folder = Path(value)
-
-  @property
-  def counter(self):
-    return self._counter
-  
-  @counter.setter
-  def counter(self, value: int):
-    self._counter = value
-
-  # -------------------------------------------
-  #   Helpers
-  # -------------------------------------------
-
-  def info(self, msg):
-    self.logger.info(msg)
-
-  def error(self, msg):
-    self.logger.error(msg)
-
-  def warn(self, msg):
-    self.logger.warning(msg)
+    self.write_queue.start()
+    self.encode_queue.start()
+    self.pipeline.bind(on_image_set=capture_one)
 
 
 class ImageGrid():
@@ -171,15 +212,19 @@ class RateMonitor():
     def f(times):
       return 0.0 if len(times) < 2 else (len(times) - 1) / (times[-1] - times[0])
     return {k:f(times) for k, times in self.recieved.items()}
-    
+  
+  def average_rate(self):
+    rates = self.get_rates()
+    values = list(rates.values())
+    return sum(values) / len(values)
 
+    
   def on_group(self, group:Dict[str, ImageOutputs]):
     for k, image in group.items():
       self.recieved[k].append(image.timestamp_sec)
 
     now = datetime.now().timestamp()
     if self.logger is not None and  now - self.last_time > self.interval:
-      self.logger.info(self.format_rates())
       self.last_time = now
 
 
