@@ -7,7 +7,7 @@ import math
 from pathlib import Path
 from queue import Queue
 from typing import List, Optional
-from beartype.typing import Dict, Tuple, NamedTuple
+from beartype.typing import Dict, Tuple
 from camera_driver.pipeline.pipeline import CameraPipeline
 import numpy as np
 import cv2
@@ -217,7 +217,6 @@ class RateMonitor():
     rates = self.get_rates()
     values = list(rates.values())
     return sum(values) / len(values)
-
     
   def on_group(self, group:Dict[str, ImageOutputs]):
     for k, image in group.items():
