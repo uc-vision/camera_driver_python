@@ -50,7 +50,6 @@ class ImageWriter():
     self.counter = 0
 
   def write_images(self, images:Dict[str, ImageOutputs]):
-
     filename_mapping = {}
     filename = f"{self.counter:05d}"
     for name, image in images.items():
@@ -127,11 +126,13 @@ class ImageWriter():
     self.encode_queue.stop()
     self.write_queue.stop()
 
+
+  def _capture_one(self, images:Dict[str, ImageOutputs]):
+    self.write_images(images)
+    self._stop(self._capture_one)
+
   def single(self):
-    def capture_one(images:Dict[str, ImageOutputs]):
-      self.write_images(images)
-      self._stop(capture_one)
-    self._start(capture_one)
+    self._start(self._capture_one)
 
   def stop(self):
     self._stop(self.write_images)
