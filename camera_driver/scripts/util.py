@@ -49,6 +49,17 @@ class ImageWriter():
     self.output_dir = folder
     self.counter = 0
 
+  def _capture_one(self, images:Dict[str, ImageOutputs]):
+    self.write_images(images)
+    self._stop(self._capture_one)
+
+  def save_calib(self, filepath: Path, images:Dict[str, ImageOutputs]):
+    calib = {cam_name: image.camera for cam_name,image in images.items()}
+    calib_rig = export_rig(calib)
+    tracking_rig = struct(tracking_rig=np.eye(4))
+    self.calib = calib_rig.merge_(tracking_rig)
+    save_json(filepath, self.calib)
+
   def write_images(self, images:Dict[str, ImageOutputs]):
     filename_mapping = {}
     filename = f"{self.counter:05d}"
@@ -70,11 +81,7 @@ class ImageWriter():
 
     calib_file: Path = self.output_dir / 'calibration.json'
     if not calib_file.exists():
-      calib = {cam_name: image.camera for cam_name,image in images.items()}
-      calib_rig = export_rig(calib)
-      tracking_rig = struct(tracking_rig=np.eye(4))
-      self.calib = calib_rig.merge_(tracking_rig)
-      save_json(calib_file, self.calib)
+      self.save_calib(calib_file, images)
 
     self.frames.append(metadata)
     self.counter = self.counter + 1
@@ -116,6 +123,7 @@ class ImageWriter():
       )
     save_json(index_file, output)
 
+
   def _start(self, func: Callable[[Dict[str, ImageOutputs]], None]):
     self.write_queue.start()
     self.encode_queue.start()
@@ -125,11 +133,6 @@ class ImageWriter():
     self.pipeline.unbind(func)
     self.encode_queue.stop()
     self.write_queue.stop()
-
-
-  def _capture_one(self, images:Dict[str, ImageOutputs]):
-    self.write_images(images)
-    self._stop(self._capture_one)
 
   def single(self):
     self._start(self._capture_one)
@@ -205,6 +208,7 @@ class RateMonitor():
     self.last_time = datetime.now().timestamp()
 
     self.pipeline.bind(on_image_set=self.on_group)
+    self.pipeline.bind(on_stopped=self.on_stop) 
     self.interval = interval
     self.logger = logger
 
@@ -217,7 +221,10 @@ class RateMonitor():
     rates = self.get_rates()
     values = list(rates.values())
     return sum(values) / len(values)
-    
+  
+  def on_stop(self):
+    self.recieved = {k:deque(maxlen=20) for k in self.pipeline.camera_info.keys()}
+
   def on_group(self, group:Dict[str, ImageOutputs]):
     for k, image in group.items():
       self.recieved[k].append(image.timestamp_sec)

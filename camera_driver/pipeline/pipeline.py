@@ -115,23 +115,23 @@ class CameraPipeline(Dispatcher):
     self.emit("on_settings", image_settings)
 
   def initialize_offsets(self):
-      self.init = Initialiser(self.camera_set.camera_ids, 
-                         self.query_time, 
-                init_window=self.config.init_window, 
-                sync_threshold=self.config.sync_threshold_msec / 1000., 
-                logger=self.logger)
-      
-      self.camera_set.bind(on_buffer=self._on_buffer)
-      self.camera_set.start()
+    self.init = Initialiser(self.camera_set.camera_ids, 
+                        self.query_time, 
+              init_window=self.config.init_window, 
+              sync_threshold=self.config.sync_threshold_msec / 1000., 
+              logger=self.logger)
+    
+    self.camera_set.bind(on_buffer=self._on_buffer)
+    self.camera_set.start()
 
-      offsets = wait_for(self.init, 'initialized', self.config.init_timeout_msec / 1000.)
-      # self.camera_set.stop()
+    offsets = wait_for(self.init, 'initialized', self.config.init_timeout_msec / 1000.)
+    # self.camera_set.stop()
 
-      if offsets is None:
-        raise InitException(f"Failed to initialize camera offsets, recieved: {self.init.frame_counts()}, minimum frames: {self.config.init_window}")
+    if offsets is None:
+      raise InitException(f"Failed to initialize camera offsets, recieved: {self.init.frame_counts()}, minimum frames: {self.config.init_window}")
 
-      self.init = None
-      return offsets
+    self.init = None
+    return offsets
 
   def create_sync(self):
     has_latching = all([info.has_latching for info in self.camera_info.values()])
