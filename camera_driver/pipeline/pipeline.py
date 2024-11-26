@@ -2,7 +2,7 @@ from dataclasses import replace
 from datetime import datetime
 import logging
 from typing import Set
-from beartype.typing import Dict
+from beartype.typing import Dict, List
 
 from camera_driver.data.util import wait_for
 import torch
@@ -48,7 +48,7 @@ def cameras_from_config(config:CameraPipelineConfig, logger:logging.Logger):
 
 
 class CameraPipeline(Dispatcher):
-  _events_ = ["on_image_set", "on_stopped", "on_settings"]
+  _events_ = ["on_image_set", "on_drop", "on_stopped", "on_settings"]
 
   @beartype
   def __init__(self, config:CameraPipelineConfig, 
@@ -96,6 +96,8 @@ class CameraPipeline(Dispatcher):
       buffer.release()
   
 
+  def _on_drop(self, missing:List[str]):
+    self.emit("on_drop", missing)
 
   def _on_image_set(self, group:Dict[str, ImageOutputs]):
     self.emit("on_image_set", group)
@@ -156,6 +158,7 @@ class CameraPipeline(Dispatcher):
                                     num_workers=self.config.sync_workers)    
 
     self.sync_handler.bind(on_group=self.processor.process_image_set)
+    self.sync_handler.bind(on_drop=self._on_drop)
 
 
   def start(self):

@@ -18,7 +18,7 @@ ProcessBuffer = Callable[[Buffer], Timestamped]
 
 
 class SyncHandler(Dispatcher):
-  _events_ = ["on_group"]
+  _events_ = ["on_group", "on_drop"]
 
   @beartype
   def __init__(self, time_offsets:Dict[str, float],
@@ -79,6 +79,7 @@ class SyncHandler(Dispatcher):
     for group in timed_out:
       missing = self.camera_set - group.camera_set
       self.logger.warning(f"Dropping timed out, missing {sorted(missing)}")
+      self.emit("on_drop", missing)
 
     buffer.release()
 
