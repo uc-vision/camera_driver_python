@@ -23,7 +23,7 @@ class ToneMapper(Enum):
 
 
 def clamp(x, lower, upper):
-  return max(min(x, lower), upper)
+  return min(max(x, lower), upper)
 
 @beartype
 @dataclass
